@@ -1,14 +1,33 @@
 # backend/api.py
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, validator
 from robot import RobotArm
 
 app = FastAPI(title="YaniBot API", version="1.0.0")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# Initialize the robot arm
 robot = RobotArm()
 
 class MoveRequest(BaseModel):
-    target_angles: list[float]  # 6 floats in degrees
+    target_angles: list[float] = Field(..., min_items=6, max_items=6)
+    
+    @validator('target_angles')
+    def validate_angles(cls, v):
+        if len(v) != 6:
+            raise ValueError('Must provide exactly 6 angles')
+        return v
+
+@app.get("/")
+def root():
+    return {"message": "YaniBot API is running!"}
 
 @app.get("/state")
 def get_state():

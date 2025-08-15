@@ -1,5 +1,5 @@
 # backend/robot.py
-import numpy as np
+import numpy as np 
 
 class RobotArm:
     def __init__(self):
@@ -49,18 +49,7 @@ class RobotArm:
     def move_to(self, target_angles):
         """
         Moves the robot to the specified target joint angles if they are valid.
-
-        Parameters:
-            target_angles (list of float): A list of 6 joint angles representing the target position for the robot.
-
-        Returns:
-            list: A list of intermediate steps (joint angle configurations) taken to reach the target position.
-
-        Raises:
-            ValueError: If target_angles does not contain exactly 6 values.
-            ValueError: If any of the target angles exceed the robot's joint limits.
         """
-
         if len(target_angles) != 6:
             raise ValueError("Target angles must be a list of 6 values.")
 
@@ -68,5 +57,8 @@ class RobotArm:
             raise ValueError("One or more angles exceed joint limits.")
 
         path = list(self.interpolate(target_angles))
-        self.current_angles = target_angles
+        
+        # Update current angles to the final position
+        self.current_angles = target_angles.copy()
+        
         return path
