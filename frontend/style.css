@@ -2,6 +2,10 @@ html, body {
   margin: 0;
   overflow: hidden;
   height: 100%;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #222;
+  color: white;
 }
 
 #ui {
@@ -9,17 +13,30 @@ html, body {
   top: 10px;
   left: 10px;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.9); /* More opaque background */
   padding: 20px;
   border-radius: 10px;
+  width: 300px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #4a90e2; /* Add border for visibility */
 }
 
 #ui h1 {
-  margin: 0 0 10px 0;
+  margin: 0 0 15px 0;
   font-size: 24px;
+  color: #4a90e2;
 }
 
-#moveRandom {
+#ui h3 {
+  margin: 20px 0 10px 0;
+  font-size: 18px;
+  color: #4a90e2;
+  border-bottom: 1px solid #4a90e2;
+  padding-bottom: 5px;
+}
+
+#moveRandom, #resetJoints, #toggleAxes {
   padding: 10px 20px;
   font-size: 16px;
   background: #ff6600;
@@ -27,16 +44,154 @@ html, body {
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  margin: 5px 0;
+  width: 100%;
 }
 
-#moveRandom:hover {
+#moveRandom:hover, #resetJoints:hover, #toggleAxes:hover {
   background: #ff8833;
 }
 
-#scene-container {
+#toggleAxes {
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 5px 0;
   width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
+}
+
+#toggleAxes:hover {
+  background: #357abd;
+}
+
+#joint-controls {
+  margin-top: 15px;
+}
+
+.joint-slider {
+  margin: 15px 0;
+}
+
+.joint-slider label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: white; /* Explicitly white text */
+  font-weight: bold;
+}
+
+.joint-slider span {
+  color: #4a90e2; /* Blue for angle values */
+  font-weight: bold;
+}
+
+.joint-slider input[type="range"] {
+  width: 100%;
+  height: 8px;
+  background: #444;
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.joint-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #4a90e2;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+}
+
+.joint-slider input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #4a90e2;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+}
+
+/* Firefox range track */
+.joint-slider input[type="range"]::-moz-range-track {
+  height: 8px;
+  background: #444;
+  border-radius: 5px;
+}
+
+#scene-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Additional contrast improvements */
+* {
+  color: white; /* Force all text to be white */
+}
+
+button {
+  color: white !important; /* Force button text to be white */
+}
+
+/* Make sure inputs are visible */
+input {
+  background: #444 !important;
+  color: white !important;
+  border: 1px solid #666 !important;
+}
+
+/* Axes Legend Styles */
+#axes-legend {
+  margin: 15px 0;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #4a90e2;
+  border-radius: 8px;
+}
+
+#axes-legend h4 {
+  margin: 0 0 10px 0;
+  color: #4a90e2;
+  font-size: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  margin-right: 10px;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.legend-color.red {
+  background-color: #ff0000;
+}
+
+.legend-color.green {
+  background-color: #00ff00;
+}
+
+.legend-color.blue {
+  background-color: #0000ff;
+}
+
+.legend-item span:last-child {
+  color: white;
+  font-weight: normal;
 }

@@ -9,13 +9,59 @@
   <div id="ui">
     <h1>YaniBot Control</h1>
     <button id="moveRandom">Move Random</button>
+    <button id="toggleAxes">Toggle Axes</button> 
+    
+    <!-- Axes Legend (initially hidden) -->
+    <div id="axes-legend" style="display: none;">
+      <h4>Axes Legend</h4>
+      <div class="legend-item">
+        <span class="legend-color red"></span>
+        <span>X-axis (Roll)</span> <!-- Red stays X -->
+      </div>
+      <div class="legend-item">
+        <span class="legend-color green"></span>
+        <span>Z-axis (Pitch)</span> <!-- Green now represents Z -->
+      </div>
+      <div class="legend-item">
+        <span class="legend-color blue"></span>
+        <span>Y-axis (Pitch/Base)</span> <!-- Blue now represents Y -->
+      </div>
+    </div>
+    
+    <!-- Manual Joint Controls -->
+    <div id="joint-controls">
+      <h3>Manual Joint Control</h3>
+      <div class="joint-slider">
+        <label>A1 (Base): <span id="a1-value">0°</span></label>
+        <input type="range" id="a1-slider" min="-180" max="180" value="0" step="1">
+      </div>
+      <div class="joint-slider">
+        <label>A2 (Shoulder): <span id="a2-value">0°</span></label>
+        <input type="range" id="a2-slider" min="-65" max="80" value="0" step="1">
+      </div>
+      <div class="joint-slider">
+        <label>A3 (Elbow): <span id="a3-value">0°</span></label>
+        <input type="range" id="a3-slider" min="-180" max="60" value="0" step="1">
+      </div>
+      <div class="joint-slider">
+        <label>A4 (Wrist Roll): <span id="a4-value">0°</span></label>
+        <input type="range" id="a4-slider" min="-300" max="300" value="0" step="1">
+      </div>
+      <div class="joint-slider">
+        <label>A5 (Wrist Pitch): <span id="a5-value">0°</span></label>
+        <input type="range" id="a5-slider" min="-120" max="120" value="0" step="1">
+      </div>
+      <div class="joint-slider">
+        <label>A6 (Flange): <span id="a6-value">0°</span></label>
+        <input type="range" id="a6-slider" min="-300" max="300" value="0" step="1">
+      </div>
+      <button id="resetJoints">Reset All Joints</button>
+    </div>
   </div>
   
   <div id="scene-container"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <!-- Fixed OrbitControls URL - note the different path -->
-  <!--script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script-->
   <script src="script.js"></script>
 </body>
 </html>
