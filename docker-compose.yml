@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: yanibot-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=${DEBUG:-false}
+      - PYTHONUNBUFFERED=1
+    networks:
+      - yanibot-network
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app  # For development hot reload
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    container_name: yanibot-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - yanibot-network
+    restart: unless-stopped
+
+networks:
+  yanibot-network:
+    driver: bridge
+
+volumes:
+  yanibot-data:

@@ -46,17 +46,18 @@ class RobotArm:
 
     def move_to(self, target_angles):
         """
-        Moves the robot to the specified target joint angles if they are valid.
+        Move robot to target position with interpolated path.
         """
         if len(target_angles) != 6:
-            raise ValueError("Target angles must be a list of 6 values.")
-
+            raise ValueError("Must provide exactly 6 joint angles")
+            
         if not self._within_limits(target_angles):
-            raise ValueError("One or more angles exceed joint limits.")
-
+            raise ValueError("Target angles exceed joint limits")
+        
+        # Generate interpolated path
         path = list(self.interpolate(target_angles))
         
-        # Update current angles to the final position
+        # Update current position to target
         self.current_angles = target_angles.copy()
         
         return path
