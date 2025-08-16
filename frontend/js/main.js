@@ -7,6 +7,7 @@ console.log("- AutomationManager:", typeof AutomationManager);
 console.log("- UIManager:", typeof UIManager);
 
 let app = {};
+let robot; // Make robot accessible
 
 // Update loading status if available
 function updateLoadingStatus(message) {
@@ -64,6 +65,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("🔍 About to create RobotManager with:", app.scene);
         app.robot = new RobotManager(app.scene);
         await app.robot.init();
+        robot = app.robot; // Make robot globally accessible
+        window.robot = robot; // For debugging
         
         updateLoadingStatus("Setting up automation...");
         
