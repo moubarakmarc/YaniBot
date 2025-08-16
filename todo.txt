@@ -1,0 +1,4 @@
+- have the robot on an elevated setup
+- have lidars under the elevated setup
+- have a controlable object move 
+- as soon as the object is within the safety area the robot should go into emergency stop

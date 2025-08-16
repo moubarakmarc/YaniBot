@@ -470,7 +470,6 @@ class BinManager {
             binZ + (Math.random() - 0.5) * 0.15          // Random spread within bin
         );
         
-        console.log(`📍 Object positioned at: (${object.position.x.toFixed(2)}, ${object.position.y.toFixed(2)}, ${object.position.z.toFixed(2)})`);
     }
     
     pickupObject(binName) {
