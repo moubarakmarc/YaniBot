@@ -459,14 +459,17 @@ class BinManager {
     }
     
     positionObjectInBin(object, binName, stackIndex = 0) {
-        const binX = binName === 'left' ? -3 : 3;
-        const baseY = 1.0; // Bin bottom + object height/2
+        // MATCH YOUR ACTUAL BIN POSITIONS FROM SCENE.JS
+        const binX = binName === 'left' ? -1 : 1;        // ← Changed from -3/3 to -1/1
+        const baseY = 0.9;                               // ← Changed from 1.0 to 0.9 (bin bottom + object height)
+        const binZ = 1;                                  // ← Changed from 2 to 1
         
         object.position.set(
-            binX + (Math.random() - 0.5) * 0.3, // Small random offset in X
-            baseY + (stackIndex * 0.09), // Stack objects vertically
-            2 + (Math.random() - 0.5) * 0.2 // Small random offset in Z
+            binX + (Math.random() - 0.5) * 0.2,          // Random spread within bin
+            baseY + (stackIndex * 0.09),                 // Stack vertically
+            binZ + (Math.random() - 0.5) * 0.15          // Random spread within bin
         );
+        
     }
     
     pickupObject(binName) {

@@ -24,6 +24,7 @@
                 <button id="toggleAxes" class="btn-utility">👁️ Toggle Axes</button>
                 <button id="testMovement" class="btn-utility">🧪 Test Movement</button>
                 <button id="emergencyStop" class="btn-emergency">🚨 Emergency Stop</button>
+                <button id="resumeEmergency" class="btn-resume">🔄 Resume Robot</button>
             </div>
         </div>
 
@@ -162,11 +163,11 @@
                 </div>
                 <div class="workspace-item">
                     <span class="workspace-color green"></span>
-                    <span>Y-Axis (Yaw)</span>
+                    <span>Y-Axis (Pitch)</span>
                 </div>
                 <div class="workspace-item">
                     <span class="workspace-color blue"></span>
-                    <span>Z-Axis (Pitch)</span>
+                    <span>Z-Axis (Yaw)</span>
                 </div>
             </div>
         </div>
@@ -234,6 +235,7 @@
     <script src="js/env.js"></script>    
 
     <!-- Load modular components -->
+    <script src="js/emergency.js"></script>
     <script src="js/api.js"></script>
     <script src="js/scene.js"></script>
     <script src="js/robot.js"></script>

@@ -1,8 +1,9 @@
 // ui.js - Complete UI controls and events management
 class UIManager {
-    constructor(robotManager, automationManager) {
+    constructor(robotManager, automationManager, emergencyManager = null) {
         this.robot = robotManager;
         this.automation = automationManager;
+        this.emergencyManager = emergencyManager;
         this.elements = {};
         this.sliderDebounceTimers = {};
     }
@@ -12,6 +13,7 @@ class UIManager {
         this.bindEvents();
         this.updateDisplay();
         this.initJointSliders();
+        this.toggleEmergencyResumeButtons(false); // Emergency not active at start
         console.log("✅ UI Manager initialized");
     }
     
@@ -66,6 +68,11 @@ class UIManager {
         
         // Window events
         window.addEventListener('beforeunload', () => this.handlePageUnload());
+        
+        const resumeBtn = document.getElementById('resumeEmergency');
+        if (resumeBtn) {
+            resumeBtn.addEventListener('click', () => this.handleResumeEmergency());
+        }
         
         console.log("🔗 UI Events bound");
     }
@@ -191,13 +198,15 @@ class UIManager {
             await this.automation.emergencyStop();
             this.updateAutomationButtons(false);
             this.toggleManualControls(true);
-            
+
+            // Toggle buttons
+            this.toggleEmergencyResumeButtons(true);
+
             // Visual indication
             document.body.style.backgroundColor = '#ffebee';
             setTimeout(() => {
                 document.body.style.backgroundColor = '';
             }, 2000);
-            
         } catch (error) {
             console.error('Emergency stop failed:', error);
         }
@@ -208,6 +217,11 @@ class UIManager {
             return; // Don't allow manual control during automation
         }
         
+        if (this.emergencyManager && this.emergencyManager.getEmergencyStatus && this.emergencyManager.getEmergencyStatus()) {
+            this.showStatus('Robot is in emergency stop! Clear emergency before moving joints.', 'error');
+            return;
+        }
+
         // Update display immediately for responsiveness
         valueDisplay.textContent = `${Math.round(angle)}°`;
         
@@ -469,6 +483,60 @@ class UIManager {
         if (this.elements.rightBinCount) {
             this.elements.rightBinCount.textContent = rightCount;
         }
+    }
+    
+    // Add this method to expose emergency stop functionality
+    triggerEmergencyStop(reason = "External trigger") {
+        console.log(`🚨 Emergency stop triggered: ${reason}`);
+        
+        // Use your existing emergency stop button functionality
+        const emergencyBtn = document.getElementById('emergencyStop'); // <-- FIXED ID
+        if (emergencyBtn) {
+            emergencyBtn.click();
+            // Or call the emergency stop function directly if you have it
+            // this.handleEmergencyStop();
+        }
+        
+        // Update UI to show reason
+        this.showEmergencyReason(reason);
+    }
+    
+    showEmergencyReason(reason) {
+        // Update emergency stop button text or add reason display
+        const emergencyBtn = document.getElementById('emergencyStop'); // <-- FIXED ID
+        if (emergencyBtn) {
+            const originalText = emergencyBtn.textContent;
+            emergencyBtn.textContent = `🚨 EMERGENCY: ${reason}`;
+            
+            // Restore original text after 3 seconds
+            setTimeout(() => {
+                emergencyBtn.textContent = originalText;
+            }, 3000);
+        }
+    }
+    
+    toggleEmergencyResumeButtons(isEmergency) {
+        const emergencyBtn = this.elements.emergencyStopBtn;
+        const resumeBtn = document.getElementById('resumeEmergency');
+        if (isEmergency) {
+            if (emergencyBtn) emergencyBtn.disabled = true;
+            if (resumeBtn) resumeBtn.disabled = false;
+            if (emergencyBtn) emergencyBtn.style.display = 'none';
+            if (resumeBtn) resumeBtn.style.display = '';
+        } else {
+            if (emergencyBtn) emergencyBtn.disabled = false;
+            if (resumeBtn) resumeBtn.disabled = true;
+            if (emergencyBtn) emergencyBtn.style.display = '';
+            if (resumeBtn) resumeBtn.style.display = 'none';
+        }
+    }
+    
+    handleResumeEmergency() {
+        if (this.emergencyManager && this.emergencyManager.forceEmergencyResume) {
+            this.emergencyManager.forceEmergencyResume();
+        }
+        this.toggleEmergencyResumeButtons(false);
+        this.showStatus('Emergency cleared. Manual control enabled.', 'success');
     }
 }
 
