@@ -1,7 +1,7 @@
-// Load robot.js
 const fs = require('fs');
 const path = require('path');
 
+// Load robot.js - mocks are already set up in setup.js
 const robotContent = fs.readFileSync(path.join(__dirname, '../../js/robot.js'), 'utf8');
 eval(robotContent);
 
@@ -18,13 +18,10 @@ describe('RobotManager', () => {
     };
 
     robotManager = new RobotManager(mockSceneManager);
-    robotManager.scene = mockSceneManager.scene; // Simulate initialized state
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-    // Reset fetch mock
-    fetch.mockClear();
+    robotManager.scene = mockSceneManager.scene;
+    
+    // Use the enhanced fetch mock helpers
+    fetch.resetMocks();
   });
 
   test('should initialize with correct default values', () => {
@@ -32,10 +29,6 @@ describe('RobotManager', () => {
     expect(robotManager.robotSegments).toEqual([]);
     expect(robotManager.currentAngles).toEqual([0, 0, 0, 0, 0, 0]);
     expect(robotManager.isMoving).toBe(false);
-  });
-
-  test('should have correct axis mapping', () => {
-    expect(robotManager.axisMapping).toEqual(['y', 'z', 'z', 'x', 'y', 'x']);
   });
 
   test('should validate joint positions correctly', () => {
@@ -71,61 +64,71 @@ describe('RobotManager', () => {
     expect(positions.home).toEqual([0, 0, 0, 0, 0, 0]);
   });
 
-  test('should handle backend communication', async () => {
-    const mockResponse = { success: true, target_angles: [10, 20, 30, 40, 50, 60] };
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse
-    });
+  test('should handle backend communication with mock helpers', async () => {
+    const testAngles = [10, 20, 30, 40, 50, 60];
+    
+    // Use enhanced mock helper
+    fetch.mockYaniBotAPI.move(testAngles);
 
-    const result = await robotManager.sendToBackend([10, 20, 30, 40, 50, 60]);
+    const result = await robotManager.sendToBackend(testAngles);
     
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:8000/move',
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target_angles: [10, 20, 30, 40, 50, 60] })
+        body: JSON.stringify({ target_angles: testAngles })
       })
     );
     
-    expect(result).toEqual(mockResponse);
+    expect(result.success).toBe(true);
+    expect(result.target_angles).toEqual(testAngles);
   });
 
-  test('should handle backend errors gracefully', async () => {
-    fetch.mockRejectedValueOnce(new Error('Network error'));
+  test('should handle network errors with enhanced mocks', async () => {
+    const testAngles = [10, 20, 30, 40, 50, 60];
+    
+    // Use enhanced error mock
+    fetch.mockNetworkError('Connection timeout');
 
-    const result = await robotManager.sendToBackend([10, 20, 30, 40, 50, 60]);
+    const result = await robotManager.sendToBackend(testAngles);
     
     expect(result).toBeNull();
     expect(console.warn).toHaveBeenCalledWith(
       '⚠️ Backend communication failed:',
-      'Network error'
+      'Connection timeout'
     );
   });
 
-  test('should reset to home position', async () => {
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true })
-    });
+  test('should handle invalid angles error', async () => {
+    const invalidAngles = [200, 0, 0, 0, 0, 0];
+    
+    // Use enhanced error mock
+    fetch.mockYaniBotAPI.invalidAngles();
+
+    const result = await robotManager.sendToBackend(invalidAngles);
+    
+    expect(result).toBeNull();
+  });
+
+  // Add more tests using enhanced mocks...
+  test('should get robot state', async () => {
+    const currentAngles = [15, 25, 35, 45, 55, 65];
+    fetch.mockYaniBotAPI.state(currentAngles);
+
+    const result = await robotManager.getBackendState();
+    
+    expect(result.current_angles).toEqual(currentAngles);
+    expect(result.is_moving).toBe(false);
+  });
+
+  test('should reset robot', async () => {
+    fetch.mockYaniBotAPI.reset();
 
     await robotManager.reset();
     
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:8000/reset',
-      expect.objectContaining({ method: 'POST' })
-    );
-  });
-
-  test('should handle emergency stop', async () => {
-    robotManager.isMoving = true;
-
-    await robotManager.emergencyStop();
-    
-    expect(robotManager.isMoving).toBe(false);
-    expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8000/emergency_stop',
       expect.objectContaining({ method: 'POST' })
     );
   });

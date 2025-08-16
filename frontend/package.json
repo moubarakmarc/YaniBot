@@ -5,8 +5,10 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --watchAll=false"
+    "test:coverage": "jest --coverage --collectCoverageFrom='js/**/*.js' --collectCoverageFrom='!js/main.js'",
+    "test:ci": "jest --ci --coverage --watchAll=false --verbose",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:unit": "jest --testPathPattern=unit"
   },
   "devDependencies": {
     "jest": "^29.7.0",
@@ -17,15 +19,18 @@
   "jest": {
     "testEnvironment": "jsdom",
     "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
-    "moduleNameMapping": {
-      "^three$": "<rootDir>/tests/mocks/three.js"
-    },
-    "collectCoverageFrom": [
-      "js/**/*.js",
-      "!js/main.js"
-    ],
+    "moduleDirectories": ["node_modules", "<rootDir>/js", "<rootDir>/tests"],
     "testMatch": [
       "<rootDir>/tests/**/*.test.js"
-    ]
+    ],
+    "collectCoverageFrom": [
+      "js/**/*.js",
+      "!js/main.js",
+      "!**/node_modules/**"
+    ],
+    "coverageDirectory": "<rootDir>/coverage",
+    "coverageReporters": ["html", "text", "lcov"],
+    "verbose": true,
+    "clearMocks": true
   }
 }
