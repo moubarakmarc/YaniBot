@@ -43,10 +43,6 @@ class RobotManager {
         // Create robot root
         this.robotRoot = new THREE.Object3D();
         this.robotRoot.name = "RobotRoot";
-        
-        this.robotRoot.rotation.x = -Math.PI / 2; // Rotate -90° to make Z point up
-
-        // Add robot root to scene
         this.scene.add(this.robotRoot);
         
         // Build robot segments in order
@@ -62,14 +58,13 @@ class RobotManager {
     
     createBase() {
         // Simple cylindrical base
-        const baseGeometry = new THREE.CylinderGeometry(0.3, 0.35, 2, 16);
+        const baseGeometry = new THREE.CylinderGeometry(0.3, 0.35, 1, 16);
         const baseMaterial = new THREE.MeshStandardMaterial({ 
             color: 0x2E7D32, // Green
             metalness: 0.3,
             roughness: 0.7
         });
         const base = new THREE.Mesh(baseGeometry, baseMaterial);
-        base.rotation.x = Math.PI / 2; // Rotate -90° to make Z point up
         base.castShadow = true;
         base.receiveShadow = true;
         base.name = "Base";
@@ -77,10 +72,11 @@ class RobotManager {
         this.robotRoot.add(base);
         this.robotSegments.push(base);
         
-        // Joint 1 (Base rotation)
+        // Joint 1 (Base rotation) - NO ROTATION
         const joint1 = new THREE.Object3D();
-        joint1.position.z = 1;
-        joint1.userData = { axis: 'z', jointIndex: 0 };
+        joint1.position.y = 0.5;
+        joint1.rotation.x = -Math.PI / 2; // Add this line
+        joint1.userData = { axis: 'y', jointIndex: 0 };
         joint1.name = "Joint1";
         
         this.robotRoot.add(joint1);
