@@ -254,19 +254,19 @@ class WorkstationManager {
         const workstationGroup = new THREE.Group();
         
         // Left table (input station)
-        const leftTable = this.createTable(-3, 2, 0x8B4513);
+        const leftTable = this.createTable(-1, 1, 0x8B4513);
         workstationGroup.add(leftTable);
         
         // Right table (output station)
-        const rightTable = this.createTable(3, 2, 0x8B4513);
+        const rightTable = this.createTable(1, 1, 0x8B4513);
         workstationGroup.add(rightTable);
         
         // Left bin (input bin - blue)
-        const leftBin = this.createBin(-3, 2, 0x4169E1);
+        const leftBin = this.createBin(-1, 1, 0x4169E1);
         workstationGroup.add(leftBin);
         
         // Right bin (output bin - green)
-        const rightBin = this.createBin(3, 2, 0x228B22);
+        const rightBin = this.createBin(1, 1, 0x228B22);
         workstationGroup.add(rightBin);
         
         return workstationGroup;
