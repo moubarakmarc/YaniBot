@@ -58,7 +58,7 @@ class RobotManager {
     
     createBase() {
         // Simple cylindrical base
-        const baseGeometry = new THREE.CylinderGeometry(0.3, 0.35, 1, 16);
+        const baseGeometry = new THREE.CylinderGeometry(0.3, 0.35, 0.4, 16);
         const baseMaterial = new THREE.MeshStandardMaterial({ 
             color: 0x2E7D32, // Green
             metalness: 0.3,
@@ -74,7 +74,7 @@ class RobotManager {
         
         // Joint 1 (Base rotation) - NO ROTATION
         const joint1 = new THREE.Object3D();
-        joint1.position.y = 0.5;
+        joint1.position.y = 0.2;
         joint1.rotation.x = -Math.PI / 2; // Add this line
         joint1.userData = { axis: 'y', jointIndex: 0 };
         joint1.name = "Joint1";
