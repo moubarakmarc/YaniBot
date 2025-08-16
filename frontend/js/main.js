@@ -12,6 +12,26 @@ function updateLoadingStatus(message) {
     }
 }
 
+// Define hideLoadingScreen function
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
+        console.log("🎬 Loading screen hidden");
+    }
+}
+
+// Toggle collapsible sections
+function toggleSection(contentId) {
+    const content = document.getElementById(contentId);
+    if (content) {
+        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("🔥 DOM Ready - Initializing YaniBot");
     
@@ -69,11 +89,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             api: !!app.api
         });
         
-        // Hide loading screen
+        // Hide loading screen - now using the defined function
         setTimeout(() => {
-            if (typeof hideLoadingScreen === 'function') {
-                hideLoadingScreen();
-            }
+            hideLoadingScreen();
         }, 1000);
         
         // Make app globally available for debugging
@@ -84,6 +102,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Stack trace:", error.stack);
         
         updateLoadingStatus(`Error: ${error.message}`);
+        
+        // Hide loading screen even on error
+        setTimeout(() => {
+            hideLoadingScreen();
+        }, 2000);
         
         // Show error in UI
         const errorDiv = document.createElement('div');
@@ -125,3 +148,8 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
     console.error('🚨 Unhandled promise rejection:', event.reason);
 });
+
+// Make utility functions globally available
+window.hideLoadingScreen = hideLoadingScreen;
+window.updateLoadingStatus = updateLoadingStatus;
+window.toggleSection = toggleSection;

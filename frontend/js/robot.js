@@ -2,6 +2,7 @@
 class RobotManager {
     constructor(sceneManager) {
         this.scene = sceneManager.scene;
+        this.scene = null; // Will be set in init()
         this.joints = [];
         this.robotSegments = [];
         this.robotRoot = null;
@@ -9,9 +10,11 @@ class RobotManager {
         this.positions = this.getPresetPositions();
         this.axisMapping = ['y', 'z', 'z', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
         this.isMoving = false;
+        this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
     }
     
     async init() {
+        this.scene = this.sceneManager.scene;
         this.buildRobot();
         this.addAxesHelpers();
         console.log("🤖 Robot initialized");
@@ -324,7 +327,7 @@ class RobotManager {
     // Backend Communication
     async sendToBackend(angles) {
         try {
-            const response = await fetch('http://localhost:8000/move', {
+            const response = await fetch(`${this.backendUrl}${window.ENV.API_ENDPOINTS.MOVE}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ target_angles: angles })
@@ -347,7 +350,7 @@ class RobotManager {
     
     async getBackendState() {
         try {
-            const response = await fetch('http://localhost:8000/state');
+            const response = await fetch(`${this.backendUrl}${window.ENV.API_ENDPOINTS.STATE}`);
             if (!response.ok) {
                 throw new Error(`Backend error: ${response.status}`);
             }
@@ -367,7 +370,7 @@ class RobotManager {
         await this.moveTo(this.positions.home, 2000);
         
         try {
-            const response = await fetch('http://localhost:8000/reset', {
+            const response = await fetch(`${this.backendUrl}${window.ENV.API_ENDPOINTS.RESET}`, {
                 method: 'POST'
             });
             
@@ -482,7 +485,7 @@ class RobotManager {
         this.isMoving = false;
         
         try {
-            await fetch('http://localhost:8000/emergency_stop', {
+            await fetch(`${this.backendUrl}${window.ENV.API_ENDPOINTS.EMERGENCY_STOP}`, {
                 method: 'POST'
             });
         } catch (error) {

@@ -238,30 +238,5 @@
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
 
-    <!-- Helper Functions -->
-    <script>
-        // Toggle collapsible sections
-        function toggleSection(contentId) {
-            const content = document.getElementById(contentId);
-            content.style.display = content.style.display === 'none' ? 'block' : 'none';
-        }
-        
-        // Hide loading screen when ready
-        function hideLoadingScreen() {
-            const loadingScreen = document.getElementById('loading-screen');
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => {
-                loadingScreen.style.display = 'none';
-            }, 500);
-        }
-        
-        // Update loading status
-        function updateLoadingStatus(message) {
-            const statusElement = document.getElementById('loading-status');
-            if (statusElement) {
-                statusElement.textContent = message;
-            }
-        }
-    </script>
 </body>
 </html>

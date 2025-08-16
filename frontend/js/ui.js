@@ -149,7 +149,7 @@ class UIManager {
         
         try {
             this.showStatus('Resetting robot...', 'info');
-            await this.robot.reset();
+            await this.robot.reset([0, 0, 0, 0, 0, 0]);
             this.updateJointDisplays([0, 0, 0, 0, 0, 0]);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
