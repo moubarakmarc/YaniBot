@@ -1,5 +1,10 @@
 // main.js - Clean entry point
 console.log("🔥 YaniBot Loading...");
+console.log("🔍 Class check:");
+console.log("- SceneManager:", typeof SceneManager);
+console.log("- RobotManager:", typeof RobotManager);
+console.log("- AutomationManager:", typeof AutomationManager);
+console.log("- UIManager:", typeof UIManager);
 
 let app = {};
 
@@ -42,6 +47,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         app.scene = new SceneManager();
         await app.scene.init();
         
+        // Debug check
+        console.log("🔍 Debug - app.scene:", app.scene);
+        console.log("🔍 Debug - app.scene.scene:", app.scene.scene);
+        
         // Verify scene is properly initialized
         if (!app.scene.scene) {
             throw new Error("Scene initialization failed - scene object is null");
@@ -52,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateLoadingStatus("Building robot model...");
         
         // Initialize robot with the scene
+        console.log("🔍 About to create RobotManager with:", app.scene);
         app.robot = new RobotManager(app.scene);
         await app.robot.init();
         

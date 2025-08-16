@@ -1,7 +1,17 @@
 // robot.js - Complete Robot creation and movement management
 class RobotManager {
     constructor(sceneManager) {
-        this.scene = sceneManager.scene;
+        if (!window.ENV) {
+            console.error("❌ window.ENV not found! Make sure env.js is loaded first");
+            throw new Error("ENV configuration not loaded");
+        }
+        console.log("✅ ENV loaded:", window.ENV);
+
+        console.log("🤖 RobotManager constructor - sceneManager:", sceneManager);
+        if (!sceneManager) {
+            throw new Error("SceneManager is required");
+        }
+        this.sceneManager = sceneManager;
         this.scene = null; // Will be set in init()
         this.joints = [];
         this.robotSegments = [];
@@ -14,6 +24,15 @@ class RobotManager {
     }
     
     async init() {
+        console.log("🤖 Robot init - sceneManager:", this.sceneManager);
+        
+        if (!this.sceneManager) {
+            throw new Error("SceneManager not available in robot init");
+        }
+        
+        if (!this.sceneManager.scene) {
+            throw new Error("Scene not available - ensure SceneManager is initialized first");
+        }
         this.scene = this.sceneManager.scene;
         this.buildRobot();
         this.addAxesHelpers();
