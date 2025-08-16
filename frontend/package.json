@@ -1,0 +1,31 @@
+{
+  "name": "yanibot-frontend",
+  "version": "1.0.0",
+  "description": "YaniBot Frontend Tests",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "@testing-library/jest-dom": "^6.1.4",
+    "canvas": "^2.11.2"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "moduleNameMapping": {
+      "^three$": "<rootDir>/tests/mocks/three.js"
+    },
+    "collectCoverageFrom": [
+      "js/**/*.js",
+      "!js/main.js"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ]
+  }
+}
