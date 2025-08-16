@@ -1,67 +1,245 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>YaniBot 3D</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YaniBot - ABB IRB6600 Simulator</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="ui">
-    <h1>YaniBot Control</h1>
-    <button id="moveRandom">Move Random</button>
-    <button id="toggleAxes">Toggle Axes</button> 
-    
-    <!-- Axes Legend (initially hidden) -->
-    <div id="axes-legend" style="display: none;">
-      <h4>Axes Legend</h4>
-      <div class="legend-item">
-        <span class="legend-color red"></span>
-        <span>X-axis (Roll)</span> <!-- Red stays X -->
-      </div>
-      <div class="legend-item">
-        <span class="legend-color green"></span>
-        <span>Z-axis (Pitch)</span> <!-- Green now represents Z -->
-      </div>
-      <div class="legend-item">
-        <span class="legend-color blue"></span>
-        <span>Y-axis (Pitch/Base)</span> <!-- Blue now represents Y -->
-      </div>
-    </div>
-    
-    <!-- Manual Joint Controls -->
-    <div id="joint-controls">
-      <h3>Manual Joint Control</h3>
-      <div class="joint-slider">
-        <label>A1 (Base): <span id="a1-value">0°</span></label>
-        <input type="range" id="a1-slider" min="-180" max="180" value="0" step="1">
-      </div>
-      <div class="joint-slider">
-        <label>A2 (Shoulder): <span id="a2-value">0°</span></label>
-        <input type="range" id="a2-slider" min="-65" max="80" value="0" step="1">
-      </div>
-      <div class="joint-slider">
-        <label>A3 (Elbow): <span id="a3-value">0°</span></label>
-        <input type="range" id="a3-slider" min="-180" max="60" value="0" step="1">
-      </div>
-      <div class="joint-slider">
-        <label>A4 (Wrist Roll): <span id="a4-value">0°</span></label>
-        <input type="range" id="a4-slider" min="-300" max="300" value="0" step="1">
-      </div>
-      <div class="joint-slider">
-        <label>A5 (Wrist Pitch): <span id="a5-value">0°</span></label>
-        <input type="range" id="a5-slider" min="-120" max="120" value="0" step="1">
-      </div>
-      <div class="joint-slider">
-        <label>A6 (Flange): <span id="a6-value">0°</span></label>
-        <input type="range" id="a6-slider" min="-300" max="300" value="0" step="1">
-      </div>
-      <button id="resetJoints">Reset All Joints</button>
-    </div>
-  </div>
-  
-  <div id="scene-container"></div>
+    <!-- Main UI Panel -->
+    <div id="ui">
+        <div class="ui-header">
+            <h1>🤖 YaniBot Control Panel</h1>
+            <div class="connection-status">
+                <span id="backend-status" class="status-indicator">🔴 Connecting...</span>
+            </div>
+        </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="script.js"></script>
+        <!-- Quick Action Buttons -->
+        <div id="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="action-buttons">
+                <button id="toggleAxes" class="btn-utility">👁️ Toggle Axes</button>
+                <button id="testMovement" class="btn-utility">🧪 Test Movement</button>
+                <button id="emergencyStop" class="btn-emergency">🚨 Emergency Stop</button>
+            </div>
+        </div>
+
+        <!-- Automation Controls -->
+        <div id="automation-controls">
+            <h3>🏭 Automation Control</h3>
+            
+            <!-- Bin Status -->
+            <div class="bin-counters">
+                <div class="counter-item">
+                    <span class="counter-color blue"></span>
+                    <span>Left Bin: <span id="left-bin-count">5</span> objects</span>
+                </div>
+                <div class="counter-item">
+                    <span class="counter-color green"></span>
+                    <span>Right Bin: <span id="right-bin-count">0</span> objects</span>
+                </div>
+                <div class="counter-item">
+                    <span class="counter-color gray"></span>
+                    <span>Cycles: <span id="cycle-count">0</span></span>
+                </div>
+            </div>
+            
+            <!-- Main Control Buttons -->
+            <div class="automation-buttons">
+                <button id="startAutomation" class="btn-start">▶️ Start Automation</button>
+                <button id="stopAutomation" class="btn-stop" disabled>⏹️ Stop</button>
+                <button id="pauseAutomation" class="btn-pause" disabled>⏸️ Pause</button>
+            </div>
+            
+            <!-- Automation Settings -->
+            <div class="automation-settings">
+                <div class="setting-group">
+                    <label for="automation-strategy">Strategy:</label>
+                    <select id="automation-strategy">
+                        <option value="left-to-right">Left → Right</option>
+                        <option value="right-to-left">Right → Left</option>
+                        <option value="bidirectional">Bidirectional</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="cycle-delay">Cycle Delay:</label>
+                    <select id="cycle-delay">
+                        <option value="1000">Fast (1s)</option>
+                        <option value="2000" selected>Normal (2s)</option>
+                        <option value="3000">Slow (3s)</option>
+                        <option value="5000">Very Slow (5s)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Status Display -->
+            <div class="status-display">
+                <div class="status-row">
+                    <span class="status-label">Status:</span>
+                    <span id="automation-status" class="status-value">Stopped</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Action:</span>
+                    <span id="current-action" class="status-value">Waiting...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Override Section -->
+        <div id="manual-override">
+            <h3>🎮 Manual Joint Control</h3>
+            <p class="override-warning">⚠️ Stop automation before manual control</p>
+            
+            <!-- Joint Sliders -->
+            <div class="joint-controls-grid">
+                <div class="joint-slider">
+                    <label>A1 (Base): <span id="a1-value">0°</span></label>
+                    <input type="range" id="a1-slider" min="-180" max="180" value="0" step="1">
+                    <div class="joint-limits">-180° to 180°</div>
+                </div>
+                
+                <div class="joint-slider">
+                    <label>A2 (Shoulder): <span id="a2-value">0°</span></label>
+                    <input type="range" id="a2-slider" min="-90" max="90" value="0" step="1">
+                    <div class="joint-limits">-90° to 90°</div>
+                </div>
+                
+                <div class="joint-slider">
+                    <label>A3 (Elbow): <span id="a3-value">0°</span></label>
+                    <input type="range" id="a3-slider" min="-180" max="180" value="0" step="1">
+                    <div class="joint-limits">-180° to 180°</div>
+                </div>
+                
+                <div class="joint-slider">
+                    <label>A4 (Wrist Roll): <span id="a4-value">0°</span></label>
+                    <input type="range" id="a4-slider" min="-180" max="180" value="0" step="1">
+                    <div class="joint-limits">-180° to 180°</div>
+                </div>
+                
+                <div class="joint-slider">
+                    <label>A5 (Wrist Pitch): <span id="a5-value">0°</span></label>
+                    <input type="range" id="a5-slider" min="-90" max="90" value="0" step="1">
+                    <div class="joint-limits">-90° to 90°</div>
+                </div>
+                
+                <div class="joint-slider">
+                    <label>A6 (Flange): <span id="a6-value">0°</span></label>
+                    <input type="range" id="a6-slider" min="-180" max="180" value="0" step="1">
+                    <div class="joint-limits">-180° to 180°</div>
+                </div>
+            </div>
+            
+            <!-- Manual Control Buttons -->
+            <div class="manual-buttons">
+                <button id="resetJoints" class="btn-reset">🏠 Reset to Home</button>
+                <button id="savePosition" class="btn-utility">💾 Save Position</button>
+                <button id="loadPosition" class="btn-utility">📁 Load Position</button>
+            </div>
+        </div>
+
+        <!-- Workspace Information -->
+        <div id="workspace-info">
+            <h3>📊 Workspace Layout</h3>
+            <div class="workspace-legend">
+                <div class="workspace-item">
+                    <span class="workspace-color blue"></span>
+                    <span>Input Bin (Left)</span>
+                </div>
+                <div class="workspace-item">
+                    <span class="workspace-color green"></span>
+                    <span>Output Bin (Right)</span>
+                </div>
+                <div class="workspace-item">
+                    <span class="workspace-color yellow"></span>
+                    <span>Safety Boundaries</span>
+                </div>
+                <div class="workspace-item">
+                    <span class="workspace-color red"></span>
+                    <span>X-Axis (Roll)</span>
+                </div>
+                <div class="workspace-item">
+                    <span class="workspace-color green"></span>
+                    <span>Y-Axis (Yaw)</span>
+                </div>
+                <div class="workspace-item">
+                    <span class="workspace-color blue"></span>
+                    <span>Z-Axis (Pitch)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div id="system-info">
+            <h3>ℹ️ System Information</h3>
+            <div class="system-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Backend:</span>
+                    <span id="backend-connection" class="stat-value">Checking...</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Robot Model:</span>
+                    <span class="stat-value">ABB IRB6600</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">DOF:</span>
+                    <span class="stat-value">6-Axis</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Keyboard Shortcuts Info -->
+        <div id="keyboard-shortcuts" class="collapsible">
+            <h4 onclick="toggleSection('shortcuts-content')">⌨️ Keyboard Shortcuts</h4>
+            <div id="shortcuts-content" class="shortcuts-content" style="display: none;">
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Ctrl+S</span>
+                    <span>Start/Stop Automation</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Ctrl+P</span>
+                    <span>Pause/Resume</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Ctrl+R</span>
+                    <span>Reset Robot</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Escape</span>
+                    <span>Emergency Stop</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 3D Scene Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>🤖 YaniBot Loading...</h2>
+            <p id="loading-status">Initializing components...</p>
+        </div>
+    </div>
+
+    <!-- Scripts - Load in correct order -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!--script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script-->
+    
+    <!-- Load env.js FIRST before other modules -->
+    <script src="js/env.js"></script>    
+
+    <!-- Load modular components -->
+    <script src="js/api.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/robot.js"></script>
+    <script src="js/automation.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+
 </body>
 </html>

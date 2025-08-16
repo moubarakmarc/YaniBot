@@ -17,7 +17,7 @@ This repo is for the assignment handed over to me by Sereact
 - [Project Structure](#project-structure)
 - [Development](#development)
 - [Configuration](#configuration)
-- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
 
 ## 🎯 Overview
 
@@ -124,20 +124,27 @@ curl -X POST http://localhost:8000/reset
 
 ```
 YaniBot/
-├── 📁 frontend/                 # Frontend application
+├── frontend/                   # Frontend application
 │   ├── index.html              # Main HTML file
-│   ├── script.js               # Three.js logic
-│   └── style.css               # Styling
-├── 📁 backend/                 # Backend API
+│   ├── style.css               # Styling
+│   └── js/
+│       ├── main.js             # Application entry point
+│       ├── scene.js            # 3D scene management
+│       ├── robot.js            # Robot model and control
+│       ├── automation.js       # Automation logic
+│       ├── ui.js               # User interface handlers
+│       ├── api.js              # Backend communication
+│       └── env.js              # Environment configuration
+├── backend/                    # Backend API
 │   ├── api.py                  # FastAPI application
 │   ├── robot.py                # Robot arm logic
 │   └── requirements.txt        # Python dependencies
-├── 🐳 docker-compose.yml       # Multi-container setup
-├── 🐳 backend.Dockerfile       # Backend container config
-├── 🐳 frontend.Dockerfile      # Frontend container config
-├── ⚙️ nginx.conf               # Nginx configuration
-├── 🚀 build.sh                 # Build script
-└── 📋 README.md                # This file
+├── docker-compose.yml          # Multi-container setup
+├── backend.Dockerfile          # Backend container config
+├── frontend.Dockerfile         # Frontend container config
+├── nginx.conf                  # Nginx configuration
+├── build.sh                    # Build script
+└── README.md                   # This file
 ```
 
 ## 🛠️ Development
@@ -161,7 +168,6 @@ python -m http.server 5000
 
 **With live reload:**
 ```bash
-# Create dev.sh for development mode
 docker compose up --build
 ```
 
@@ -232,10 +238,6 @@ docker compose logs frontend
 ## 📄 License
 
 This project is part of an assignment for **Sereact**. Please respect intellectual property rights.
-
-## 📞 Contact
-
-For questions regarding this assignment implementation, please contact the development team.
 
 ---
 

@@ -5,34 +5,41 @@ services:
     build:
       context: .
       dockerfile: backend.Dockerfile
-    container_name: yanibot-backend
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
     environment:
-      - DEBUG=${DEBUG:-false}
-      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+      - UVICORN_RELOAD=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - yanibot-network
-    restart: unless-stopped
-    volumes:
-      - ./backend:/app  # For development hot reload
 
   frontend:
     build:
       context: .
       dockerfile: frontend.Dockerfile
-    container_name: yanibot-frontend
     ports:
       - "80:80"
     depends_on:
       - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - yanibot-network
-    restart: unless-stopped
 
 networks:
   yanibot-network:
     driver: bridge
-
-volumes:
-  yanibot-data:
