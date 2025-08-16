@@ -5,9 +5,6 @@ class RobotManager {
             console.error("❌ window.ENV not found! Make sure env.js is loaded first");
             throw new Error("ENV configuration not loaded");
         }
-        console.log("✅ ENV loaded:", window.ENV);
-
-        console.log("🤖 RobotManager constructor - sceneManager:", sceneManager);
         if (!sceneManager) {
             throw new Error("SceneManager is required");
         }
@@ -22,10 +19,11 @@ class RobotManager {
         this.isMoving = false;
         this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
         this.axesHelper = null;
+        this.isEmergencyMode = false;
+        this.queuedMovements = [];
     }
     
     async init() {
-        console.log("🤖 Robot init - sceneManager:", this.sceneManager);
         
         if (!this.sceneManager) {
             throw new Error("SceneManager not available in robot init");
@@ -271,7 +269,6 @@ class RobotManager {
             joint.add(jointAxes);
         });
         
-        console.log('📐 Coordinate system created and stored: Z=Blue(UP), X=Red(right), Y=Green(forward)');
     }
     
     // Enhanced lighting for better robot visualization
@@ -366,6 +363,11 @@ class RobotManager {
     }
     
     updateJointRotation(jointIndex, angle) {
+        if (this.isEmergencyMode) {
+            console.warn("🚨 Movement blocked - Robot in emergency mode");
+            return false;
+        }
+        
         if (!this.joints[jointIndex]) {
             console.warn(`Joint ${jointIndex} not found`);
             return;
@@ -392,9 +394,15 @@ class RobotManager {
             default:
                 console.warn(`Unknown axis: ${axis} for joint ${jointIndex}`);
         }
+        return true;
     }
     
     async sendToBackend(angles) {
+        if (this.isEmergencyMode) {
+            console.warn("🚨 Backend command blocked - Robot in emergency mode");
+            throw new Error("Robot in emergency mode - movement not allowed");
+        }
+        
         // Validate angles first
         if (!this.isValidPosition(angles)) {
             console.warn('❌ Invalid joint angles:', angles);
@@ -600,6 +608,48 @@ class RobotManager {
         } catch (error) {
             console.warn('⚠️ Backend emergency stop failed:', error.message);
         }
+    }
+    
+    // Add emergency stop method
+    emergencyStop() {
+        this.isEmergencyMode = true;
+        console.log("🚨 Robot EMERGENCY STOP activated");
+        
+        // Stop any ongoing movements
+        this.stopAllMovements();
+        
+        // Change robot color to indicate emergency
+        this.setEmergencyVisual(true);
+    }
+    
+    resumeFromEmergency() {
+        this.isEmergencyMode = false;
+        console.log("✅ Robot resumed from emergency mode");
+        
+        // Restore normal robot color
+        this.setEmergencyVisual(false);
+        
+        // Resume any queued movements if needed
+        // this.resumeQueuedMovements();
+    }
+    
+    stopAllMovements() {
+        // Stop any ongoing animations or movements
+        // You can add specific movement stopping logic here
+        console.log("⏹️ All robot movements stopped");
+    }
+    
+    setEmergencyVisual(isEmergency) {
+        // Change robot colors to indicate emergency state
+        this.robotSegments.forEach(segment => {
+            if (isEmergency) {
+                // Add red glow or change color
+                segment.material.emissive.setHex(0x440000); // Dark red glow
+            } else {
+                // Restore normal appearance
+                segment.material.emissive.setHex(0x000000); // No glow
+            }
+        });
     }
 }
 
