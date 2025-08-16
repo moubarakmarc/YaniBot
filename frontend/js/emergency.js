@@ -336,8 +336,15 @@ class EmergencyManager {
     }
 
     forceEmergencyResume() {
-        this.isEmergencyMode = false;
-        this.deactivateEmergencyMode();
+    this.isEmergencyMode = false;
+        if (this.robotManager && typeof this.robotManager.resumeFromEmergency === 'function') {
+            this.robotManager.resumeFromEmergency(); // This must clear the backend emergency state!
+            console.log("✅ RobotManager: Emergency state cleared, robot can move again.");
+        }
+        // Optionally update UI
+        if (this.uiManager && this.uiManager.toggleEmergencyResumeButtons) {
+            this.uiManager.toggleEmergencyResumeButtons(false);
+    }
     }
 }
 

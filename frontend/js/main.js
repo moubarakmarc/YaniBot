@@ -79,8 +79,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Then initialize emergency system with UI reference
             if (typeof EmergencyManager !== 'undefined') {
-                app.emergency = new EmergencyManager(app.scene, app.ui);
-                
+                app.emergency = new EmergencyManager(app.scene, app.robot);
+                app.emergency.uiManager = app.ui; // Pass UI manager to emergency manager
+
                 // Update UI manager with emergency reference
                 app.ui.emergencyManager = app.emergency;
                 
