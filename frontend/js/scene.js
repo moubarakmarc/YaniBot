@@ -273,6 +273,10 @@ class WorkstationManager {
         const lidars = this.createLidarSensors();
         workstationGroup.add(lidars);
         
+        // Add red circle around robot base (3m radius)
+        const robotWorkspace = this.createRobotWorkspaceCircle();
+        workstationGroup.add(robotWorkspace);
+        
         return workstationGroup;
     }
     
@@ -414,6 +418,33 @@ class WorkstationManager {
         console.log("📡 Lidar sensors created at robot base");
         
         return lidarGroup;
+    }
+    
+    createRobotWorkspaceCircle() {
+        const circleGroup = new THREE.Group();
+        
+        // Create red circle with 3-meter radius
+        const circleGeometry = new THREE.RingGeometry(2.95, 3.0, 64); // Inner radius 2.95, outer 3.0 for thin line
+        const circleMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF0000, // Red
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+        circle.rotation.x = -Math.PI / 2; // Rotate to lie flat on ground
+        circle.position.set(0, 0.005, 0); // Slightly above ground to avoid z-fighting
+        circle.name = "RobotWorkspaceCircle";
+        circleGroup.add(circle);
+        
+        // Optional: Add text label
+        const loader = new THREE.FontLoader();
+        // Note: You'd need to load a font for text. For now, just the circle.
+        
+        console.log("🔴 Robot workspace circle created (3m radius)");
+        
+        return circleGroup;
     }
 }
 
