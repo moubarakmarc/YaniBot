@@ -1,0 +1,2 @@
+- enhance the script that interpolates between two given points for the robot movement
+- add a box that keeps on showing the robot joints and the position of the end effector in the world view
