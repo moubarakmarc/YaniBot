@@ -269,6 +269,10 @@ class WorkstationManager {
         const rightBin = this.createBin(1, 1, 0x228B22);
         workstationGroup.add(rightBin);
         
+        // Add lidar sensors next to robot base
+        const lidars = this.createLidarSensors();
+        workstationGroup.add(lidars);
+        
         return workstationGroup;
     }
     
@@ -358,6 +362,58 @@ class WorkstationManager {
         binGroup.position.set(x, 0.85, z);
         
         return binGroup;
+    }
+    
+    createLidarSensors() {
+        const lidarGroup = new THREE.Group();
+        
+        // Lidar sensor geometry (small black cylinders)
+        const lidarGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.15, 16);
+        const lidarMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        
+        // Left lidar sensor
+        const leftLidar = new THREE.Mesh(lidarGeometry, lidarMaterial);
+        leftLidar.position.set(-0.4, 0.075, -0.3); // Left side of robot base
+        leftLidar.castShadow = true;
+        leftLidar.receiveShadow = true;
+        leftLidar.name = "LeftLidar";
+        lidarGroup.add(leftLidar);
+        
+        // Right lidar sensor
+        const rightLidar = new THREE.Mesh(lidarGeometry, lidarMaterial);
+        rightLidar.position.set(0.4, 0.075, -0.3); // Right side of robot base
+        rightLidar.castShadow = true;
+        rightLidar.receiveShadow = true;
+        rightLidar.name = "RightLidar";
+        lidarGroup.add(rightLidar);
+        
+        // Optional: Add lidar mounting plates
+        const plateGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.02, 16);
+        const plateMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x333333, // Dark gray
+            metalness: 0.5,
+            roughness: 0.7
+        });
+        
+        // Left mounting plate
+        const leftPlate = new THREE.Mesh(plateGeometry, plateMaterial);
+        leftPlate.position.set(-0.4, 0.01, -0.3);
+        leftPlate.name = "LeftLidarPlate";
+        lidarGroup.add(leftPlate);
+        
+        // Right mounting plate
+        const rightPlate = new THREE.Mesh(plateGeometry, plateMaterial);
+        rightPlate.position.set(0.4, 0.01, -0.3);
+        rightPlate.name = "RightLidarPlate";
+        lidarGroup.add(rightPlate);
+        
+        console.log("📡 Lidar sensors created at robot base");
+        
+        return lidarGroup;
     }
 }
 
