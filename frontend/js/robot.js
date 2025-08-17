@@ -206,7 +206,7 @@ class RobotManager {
         // Joint 5 (Wrist pitch) - ROTATE -90° around X
         const joint5 = new THREE.Object3D();
         joint5.position.set(0, 0, 0.2);
-        joint5.userData = { axis: 'y', jointIndex: 4 };
+        joint5.userData = { axis: 'x', jointIndex: 4 };
         joint5.name = "Joint5";
         
         parentJoint.add(joint5);
@@ -321,6 +321,16 @@ class RobotManager {
             this.isMoving = false;
         }
     }
+
+    async moveAlongPath(path, duration = 2000) {
+        if (!Array.isArray(path) || path.length === 0) return;
+        const stepDuration = duration / path.length;
+        for (const angles of path) {
+            this.setJointAngles(angles);
+            await this.sleep(stepDuration);
+        }
+        this.currentAngles = path[path.length - 1];
+    }
     
     async animateToPosition(targetAngles, duration = 2000) {
         return new Promise((resolve) => {
@@ -402,12 +412,6 @@ class RobotManager {
             console.warn("🚨 Backend command blocked - Robot in emergency mode");
             throw new Error("Robot in emergency mode - movement not allowed");
         }
-        
-        // Validate angles first
-        if (!this.isValidPosition(angles)) {
-            console.warn('❌ Invalid joint angles:', angles);
-            throw new Error('Joint angles out of range');
-        }
 
         try {
             console.log('📡 Sending to backend:', { target_angles: angles });
@@ -446,20 +450,6 @@ class RobotManager {
             // Don't throw error - allow frontend to continue working
             return null;
         }
-    }
-
-    // Add validation method if missing (around line 580):
-    isValidPosition(angles) {
-        const limits = this.getJointLimits();
-        return angles.every((angle, i) => {
-            if (i >= limits.length) return true;
-            const [min, max] = limits[i];
-            const valid = angle >= min && angle <= max;
-            if (!valid) {
-                console.warn(`Joint ${i+1} angle ${angle}° out of range [${min}, ${max}]`);
-            }
-            return valid;
-        });
     }
     
     async getBackendState() {
@@ -518,24 +508,36 @@ class RobotManager {
         
         console.log('✅ Robot movement test completed');
     }
+
+    async getInterpolatedPath(targetAngles, steps = 20) {
+        const response = await fetch(`${this.backendUrl}/interpolate?steps=${steps}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_angles: targetAngles })
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch interpolated path');
+        }
+        const data = await response.json();
+        return data.steps; // This is the list of joint angle arrays
+    }
     
     getPresetPositions() {
         return {
-            home: [0, -30, 45, 0, -15, 0],
+            // change to become default ABB IRB6600 home position
+            home: [0,0,0,0,0,0], // Default home position
             
             // Realistic ABB IRB6600 positions
-            leftBinApproach: [-90, 15, -25, 0, 10, 0],
-            leftBinPick: [-90, 40, -55, 0, 25, 0],
-            leftBinLift: [-90, 25, -35, 0, 15, 0],
-            
-            rightBinApproach: [90, 15, -25, 0, 10, 0],
-            rightBinDrop: [90, 40, -55, 0, 25, 0],
-            rightBinLift: [90, 25, -35, 0, 15, 0],
-            
+            leftBinApproach: [-45.0, 50.0, 55.0, 0.0, 0.0, 1.0],
+            leftBinPick: [-45.0,75.0,55.0,0.0,35.0,1.0],
+            leftBinLift: [-45.0,50.0,55.0,0.0,0.0,1.0],
+
+            rightBinApproach: [45.0,50.0,55.0,0.0,0.0,1.0],
+            rightBinDrop: [45.0,75.0,55.0,0.0,0.0,1.0],
+            rightBinLift: [45.0,50.0,55.0,0.0,0.0,1.0],
+
             // Safe intermediate positions
-            intermediate1: [0, -15, 15, 0, 0, 0],
-            intermediate2: [45, -10, 10, 0, 5, 0],
-            intermediate3: [-45, -10, 10, 0, 5, 0],
+            intermediate1: [0.0, 30.0, 55.0, 0.0, 0.0, 0.0],
             
             // Extended reach positions
             extended: [0, 60, -30, 0, -30, 0],
@@ -564,36 +566,6 @@ class RobotManager {
             return worldPosition;
         }
         return new THREE.Vector3(0, 0, 0);
-    }
-    
-    // Check if position is reachable (basic validation)
-    isPositionValid(angles) {
-        const limits = [
-            [-180, 180], // Joint 1
-            [-90, 90],   // Joint 2
-            [-180, 180], // Joint 3
-            [-180, 180], // Joint 4
-            [-90, 90],   // Joint 5
-            [-180, 180]  // Joint 6
-        ];
-        
-        return angles.every((angle, i) => {
-            if (i >= limits.length) return true;
-            const [min, max] = limits[i];
-            return angle >= min && angle <= max;
-        });
-    }
-    
-    // Enhanced joint limits to match real ABB IRB6600
-    getJointLimits() {
-        return [
-            [-180, 180], // A1: Base rotation
-            [-90, 85],   // A2: Shoulder pitch (actual IRB6600 limits)
-            [-180, 70],  // A3: Elbow pitch (actual IRB6600 limits)
-            [-300, 300], // A4: Wrist roll
-            [-130, 130], // A5: Wrist pitch (actual IRB6600 limits)
-            [-360, 360]  // A6: Tool rotation (continuous)
-        ];
     }
     
     // Emergency stop

@@ -313,7 +313,7 @@ class UIManager {
     
     updateBinCounts() {
         if (this.automation.binManager) {
-            const counts = this.automation.binManager.getCounts();
+            const counts = this.automation.binManager.getBinCounts();
             if (this.elements.leftBinCount) {
                 this.elements.leftBinCount.textContent = counts.left;
             }
