@@ -7,9 +7,6 @@ class SceneManager {
         this.workstation = null;
         this.controls = null;
         this.axesVisible = true;
-
-        // Don't initialize here - wait for init() method
-        console.log("🏗️ SceneManager constructor called");
     }
     
     async init() {

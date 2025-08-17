@@ -20,7 +20,6 @@ class EmergencyManager {
     init() {
         this.createMovableSquare();
         this.setupEventListeners();
-        console.log("🚨 Emergency Manager initialized");
     }
     
     createMovableSquare() {

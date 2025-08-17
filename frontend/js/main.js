@@ -1,11 +1,3 @@
-// main.js - Clean entry point
-console.log("🔥 YaniBot Loading...");
-console.log("🔍 Class check:");
-console.log("- SceneManager:", typeof SceneManager);
-console.log("- RobotManager:", typeof RobotManager);
-console.log("- AutomationManager:", typeof AutomationManager);
-console.log("- UIManager:", typeof UIManager);
-
 let app = {};
 let robot; // Make robot accessible
 
