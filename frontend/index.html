@@ -48,6 +48,7 @@
                 <button id="startAutomation" class="btn-start">▶️ Start Automation</button>
                 <button id="stopAutomation" class="btn-stop" disabled>⏹️ Stop</button>
                 <button id="pauseAutomation" class="btn-pause" disabled>⏸️ Pause</button>
+                <button id="resumeAutomation" class="btn-resume" disabled style="display: none;">🔄 Resume</button>
             </div>
             
             <!-- Automation Settings -->
@@ -153,10 +154,6 @@
         <div id="system-info">
             <h3>ℹ️ System Information</h3>
             <div class="system-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Backend:</span>
-                    <span id="backend-connection" class="stat-value">Checking...</span>
-                </div>
                 <div class="stat-item">
                     <span class="stat-label">Robot Model:</span>
                     <span class="stat-value">ABB IRB6600</span>

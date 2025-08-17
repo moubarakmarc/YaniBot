@@ -6,7 +6,8 @@ class AutomationManager {
         this.binManager = new BinManager(robotManager.scene);
         this.cycleCount = 0;
         this.isRunning = false;
-        this.isPaused = false;
+        this.isPausedEmergency = false;
+        this.isPausedUser = false;
         this.emergencyManager = emergencyManager;
         this.emergencyMonitorInterval = null; // For emergency monitoring
         this.currentlyHeldObject = null;
@@ -26,14 +27,16 @@ class AutomationManager {
         if (this.binManager.isEmpty()) throw new Error('No objects to move - reset the scene first');
         this.isRunning = true;
         this.startEmergencyMonitor();
-        this.isPaused = false;
+        this.isPausedEmergency = false;
+        this.isPausedUser = false;
         this.cycleCount = 0;
         this.automationLoop();
     }
 
     async stop() {
         this.isRunning = false;
-        this.isPaused = false;
+        this.isPausedEmergency = false;
+        this.isPausedUser = false;
         if (this.automationInterval) clearTimeout(this.automationInterval);
         if (this.currentlyHeldObject) {
             this.binManager.dropObject(this.currentlyHeldObject, 'left');
@@ -152,7 +155,7 @@ class AutomationManager {
     }
 
     async waitWhilePaused() {
-        while (this.isPaused && this.isRunning) {
+        while ((this.isPausedEmergency || this.isPausedUser) && this.isRunning) {
             await this.sleep(100); // Check every 100ms
         }
     }
@@ -184,14 +187,14 @@ class AutomationManager {
         if (this.emergencyMonitorInterval) return;
         this.emergencyMonitorInterval = setInterval(() => {
             if (this.emergencyManager && this.emergencyManager.getEmergencyStatus()) {
-                if (!this.isPaused && this.isRunning) {
-                    this.isPaused = true;
+                if (!this.isPausedEmergency && this.isRunning) {
+                    this.isPausedEmergency = true;
                     this.currentAction = 'Paused: Emergency Mode Active';
                     console.warn('⏸️ Automation paused due to emergency.');
                 }
             } else {
-                if (this.isPaused && this.isRunning) {
-                    this.isPaused = false;
+                if (this.isPausedEmergency && this.isRunning) {
+                    this.isPausedEmergency = false;
                     this.currentAction = 'Resumed: Emergency Cleared';
                     console.info('▶️ Automation resumed after emergency.');
                 }
@@ -203,6 +206,19 @@ class AutomationManager {
         if (this.emergencyMonitorInterval) {
             clearInterval(this.emergencyMonitorInterval);
             this.emergencyMonitorInterval = null;
+        }
+    }
+
+    togglePause() {
+        if (!this.isRunning) return;
+        if (this.isPausedUser) {
+            this.isPausedUser = false;
+            this.currentAction = 'Resumed by User';
+            console.info('▶️ Automation resumed by user.');
+        } else {
+            this.isPausedUser = true;
+            this.currentAction = 'Paused by User';
+            console.warn('⏸️ Automation paused by user.');
         }
     }
 

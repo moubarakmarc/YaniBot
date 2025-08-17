@@ -22,6 +22,7 @@ class UIManager {
             startBtn: document.getElementById('startAutomation'),
             stopBtn: document.getElementById('stopAutomation'),
             pauseBtn: document.getElementById('pauseAutomation'),
+            resumeBtn: document.getElementById('resumeAutomation'),
             resetBtn: document.getElementById('resetJoints'),
             
             // Status displays
@@ -56,6 +57,7 @@ class UIManager {
         this.elements.startBtn?.addEventListener('click', () => this.handleStartAutomation());
         this.elements.stopBtn?.addEventListener('click', () => this.handleStopAutomation());
         this.elements.pauseBtn?.addEventListener('click', () => this.handlePauseAutomation());
+        this.elements.resumeBtn?.addEventListener('click', () => this.handleResumeAutomation());
         this.elements.resetBtn?.addEventListener('click', () => this.handleResetRobot());
         
         // Utility control events
@@ -125,23 +127,29 @@ class UIManager {
     
     async handlePauseAutomation() {
         try {
-            const wasPaused = this.automation.isPaused;
+            const wasPaused = this.automation.isPausedUser;
             await this.automation.togglePause();
+            this.updatePauseResumeButtons();
+            this.showStatus('Automation paused', 'success');
             
-            if (wasPaused) {
-                this.showStatus('Automation resumed', 'success');
-                if (this.elements.pauseBtn) {
-                    this.elements.pauseBtn.textContent = '⏸️ Pause';
-                }
-            } else {
-                this.showStatus('Automation paused', 'warning');
-                if (this.elements.pauseBtn) {
-                    this.elements.pauseBtn.textContent = '▶️ Resume';
-                }
-            }
         } catch (error) {
             console.error('Failed to pause/resume automation:', error);
             this.showStatus(`Failed to pause/resume: ${error.message}`, 'error');
+        }
+    }
+
+    async handleResumeAutomation() {
+        try {
+            if (!this.automation.isPausedUser) {
+                this.showStatus('Automation is not paused', 'info');
+                return;
+            }
+            await this.automation.togglePause();
+            this.updatePauseResumeButtons();
+            this.showStatus('Automation resumed', 'success');
+        } catch (error) {
+            console.error('Failed to resume automation:', error);
+            this.showStatus(`Failed to resume: ${error.message}`, 'error');
         }
     }
     
@@ -159,17 +167,6 @@ class UIManager {
         } catch (error) {
             console.error('Failed to reset robot:', error);
             this.showStatus(`Failed to reset: ${error.message}`, 'error');
-        }
-    }
-    
-    handleToggleAxes() {
-        if (this.robot.scene && this.robot.scene.toggleAxes) {
-            this.robot.scene.toggleAxes();
-            const button = this.elements.toggleAxesBtn;
-            if (button) {
-                const isVisible = this.robot.scene.axesVisible;
-                button.textContent = isVisible ? 'Hide Axes' : 'Show Axes';
-            }
         }
     }
     
@@ -262,7 +259,7 @@ class UIManager {
         let action = 'Waiting...';
         
         if (this.automation.isRunning) {
-            status = this.automation.isPaused ? 'Paused' : 'Running';
+            status = this.automation.isPausedUser ? 'Paused' : 'Running';
             action = this.automation.currentAction || 'Processing...';
         }
         
@@ -307,6 +304,20 @@ class UIManager {
             } else {
                 manualSection.classList.add('disabled');
             }
+        }
+    }
+
+    updatePauseResumeButtons() {
+        if (this.automation.isPausedUser) {
+            // Show Resume, hide Pause
+            this.elements.pauseBtn.style.display = 'none';
+            this.elements.resumeBtn.style.display = '';
+            this.elements.resumeBtn.disabled = false;
+        } else {
+            // Show Pause, hide Resume
+            this.elements.pauseBtn.style.display = '';
+            this.elements.resumeBtn.style.display = 'none';
+            this.elements.pauseBtn.disabled = false;
         }
     }
     
