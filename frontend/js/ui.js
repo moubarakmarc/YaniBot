@@ -13,16 +13,18 @@ class UIManager {
         this.bindEvents();
         this.updateDisplay();
         this.initJointSliders();
-        this.toggleEmergencyResumeButtons(false); // Emergency not active at start
         console.log("✅ UI Manager initialized");
     }
     
     cacheElements() {
         this.elements = {
+            resetSceneBtn: document.getElementById('resetScene'),
+            
             // Automation controls
             startBtn: document.getElementById('startAutomation'),
             stopBtn: document.getElementById('stopAutomation'),
             pauseBtn: document.getElementById('pauseAutomation'),
+            resumeBtn: document.getElementById('resumeAutomation'),
             resetBtn: document.getElementById('resetJoints'),
             
             // Status displays
@@ -37,41 +39,47 @@ class UIManager {
             jointValues: {},
             
             // Other controls
-            toggleAxesBtn: document.getElementById('toggleAxes'),
-            testMovementBtn: document.getElementById('testMovement'),
-            emergencyStopBtn: document.getElementById('emergencyStop')
+            emergencyStopBtn: document.getElementById('emergencyStop'),
         };
-        
+
         // Cache joint sliders and value displays
         for (let i = 1; i <= 6; i++) {
             this.elements.jointSliders[`a${i}`] = document.getElementById(`a${i}-slider`);
+            console.log(this.elements.jointSliders[`a${i}`]);
             this.elements.jointValues[`a${i}`] = document.getElementById(`a${i}-value`);
+            console.log(this.elements.jointValues[`a${i}`]);
         }
-        
         console.log("🗂️ UI Elements cached");
+        
+        
     }
     
     bindEvents() {
         // Automation control events
+        this.elements.resetSceneBtn?.addEventListener('click', () => this.handleResetScene());
         this.elements.startBtn?.addEventListener('click', () => this.handleStartAutomation());
         this.elements.stopBtn?.addEventListener('click', () => this.handleStopAutomation());
         this.elements.pauseBtn?.addEventListener('click', () => this.handlePauseAutomation());
+        this.elements.resumeBtn?.addEventListener('click', () => this.handleResumeAutomation());
         this.elements.resetBtn?.addEventListener('click', () => this.handleResetRobot());
         
         // Utility control events
-        this.elements.toggleAxesBtn?.addEventListener('click', () => this.handleToggleAxes());
-        this.elements.testMovementBtn?.addEventListener('click', () => this.handleTestMovement());
-        this.elements.emergencyStopBtn?.addEventListener('click', () => this.handleEmergencyStop());
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        this.elements.emergencyStopBtn?.addEventListener('click', () => this.emergencyManager?.activateEmergencyMode());
         
         // Window events
         window.addEventListener('beforeunload', () => this.handlePageUnload());
         
-        const resumeBtn = document.getElementById('resumeEmergency');
-        if (resumeBtn) {
-            resumeBtn.addEventListener('click', () => this.handleResumeEmergency());
+        const resumeEbtn = document.getElementById('resumeEmergency');
+        if (resumeEbtn) {
+            resumeEbtn.addEventListener('click', () => this.emergencyManager?.deactivateEmergencyMode());
+        }
+
+        // Strategy selection event
+        const strategySelect = document.getElementById('automation-strategy');
+        if (strategySelect) {
+            strategySelect.addEventListener('change', (e) => {
+                this.automation.strategy = e.target.value;
+            });
         }
         
         console.log("🔗 UI Events bound");
@@ -99,13 +107,35 @@ class UIManager {
     }
     
     // Event Handlers
+    async handleResetScene() {
+        try {
+            this.showStatus('Resetting scene...', 'info');
+            // Stop automation if running
+            if (this.automation.isRunning) {
+                await this.automation.stop();
+            }
+            // Reset the scene
+            if (this.robot && this.robot.scene && this.robot.scene.reset) {
+                await this.robot.scene.reset();
+            } else {
+                // Fallback: reload the page
+                location.reload();
+            }
+            this.showStatus('Scene reset!', 'success');
+        } catch (error) {
+            console.error('Failed to reset scene:', error);
+            this.showStatus(`Failed to reset scene: ${error.message}`, 'error');
+        }
+    }
+    
     async handleStartAutomation() {
         try {
             this.showStatus('Starting automation...', 'info');
             await this.automation.start();
             this.updateAutomationButtons(true);
-            this.toggleManualControls(false);
-            this.showStatus('Automation started successfully', 'success');
+            this.toggleOverrideControls(false);
+            this.showStatus('Automation Starting...', 'success');
+            this.updateDisplay();
         } catch (error) {
             console.error('Failed to start automation:', error);
             this.showStatus(`Failed to start: ${error.message}`, 'error');
@@ -118,8 +148,9 @@ class UIManager {
             this.showStatus('Stopping automation...', 'info');
             await this.automation.stop();
             this.updateAutomationButtons(false);
-            this.toggleManualControls(true);
+            this.toggleOverrideControls(true);
             this.showStatus('Automation stopped', 'warning');
+            this.updateDisplay();
         } catch (error) {
             console.error('Failed to stop automation:', error);
             this.showStatus(`Failed to stop: ${error.message}`, 'error');
@@ -128,23 +159,29 @@ class UIManager {
     
     async handlePauseAutomation() {
         try {
-            const wasPaused = this.automation.isPaused;
+            const wasPaused = this.automation.isPausedUser;
             await this.automation.togglePause();
+            this.updatePauseResumeButtons();
+            this.showStatus('Automation paused', 'success');
             
-            if (wasPaused) {
-                this.showStatus('Automation resumed', 'success');
-                if (this.elements.pauseBtn) {
-                    this.elements.pauseBtn.textContent = '⏸️ Pause';
-                }
-            } else {
-                this.showStatus('Automation paused', 'warning');
-                if (this.elements.pauseBtn) {
-                    this.elements.pauseBtn.textContent = '▶️ Resume';
-                }
-            }
         } catch (error) {
             console.error('Failed to pause/resume automation:', error);
             this.showStatus(`Failed to pause/resume: ${error.message}`, 'error');
+        }
+    }
+
+    async handleResumeAutomation() {
+        try {
+            if (!this.automation.isPausedUser) {
+                this.showStatus('Automation is not paused', 'info');
+                return;
+            }
+            await this.automation.togglePause();
+            this.updatePauseResumeButtons();
+            this.showStatus('Automation resumed', 'success');
+        } catch (error) {
+            console.error('Failed to resume automation:', error);
+            this.showStatus(`Failed to resume: ${error.message}`, 'error');
         }
     }
     
@@ -162,53 +199,6 @@ class UIManager {
         } catch (error) {
             console.error('Failed to reset robot:', error);
             this.showStatus(`Failed to reset: ${error.message}`, 'error');
-        }
-    }
-    
-    handleToggleAxes() {
-        if (this.robot.scene && this.robot.scene.toggleAxes) {
-            this.robot.scene.toggleAxes();
-            const button = this.elements.toggleAxesBtn;
-            if (button) {
-                const isVisible = this.robot.scene.axesVisible;
-                button.textContent = isVisible ? 'Hide Axes' : 'Show Axes';
-            }
-        }
-    }
-    
-    async handleTestMovement() {
-        if (this.automation.isRunning) {
-            this.showStatus('Cannot test: Stop automation first', 'error');
-            return;
-        }
-        
-        try {
-            this.showStatus('Testing robot movement...', 'info');
-            await this.robot.testMovement();
-            this.showStatus('Movement test completed', 'success');
-        } catch (error) {
-            console.error('Movement test failed:', error);
-            this.showStatus(`Movement test failed: ${error.message}`, 'error');
-        }
-    }
-    
-    async handleEmergencyStop() {
-        try {
-            this.showStatus('EMERGENCY STOP ACTIVATED', 'error');
-            await this.automation.emergencyStop();
-            this.updateAutomationButtons(false);
-            this.toggleManualControls(true);
-
-            // Toggle buttons
-            this.toggleEmergencyResumeButtons(true);
-
-            // Visual indication
-            document.body.style.backgroundColor = '#ffebee';
-            setTimeout(() => {
-                document.body.style.backgroundColor = '';
-            }, 2000);
-        } catch (error) {
-            console.error('Emergency stop failed:', error);
         }
     }
     
@@ -262,39 +252,6 @@ class UIManager {
         }
     }
     
-    handleKeyboard(event) {
-        // Keyboard shortcuts
-        if (event.ctrlKey || event.metaKey) {
-            switch (event.key.toLowerCase()) {
-                case 's':
-                    event.preventDefault();
-                    if (this.automation.isRunning) {
-                        this.handleStopAutomation();
-                    } else {
-                        this.handleStartAutomation();
-                    }
-                    break;
-                case 'p':
-                    event.preventDefault();
-                    this.handlePauseAutomation();
-                    break;
-                case 'r':
-                    event.preventDefault();
-                    this.handleResetRobot();
-                    break;
-                case 'e':
-                    event.preventDefault();
-                    this.handleEmergencyStop();
-                    break;
-            }
-        }
-        
-        // Escape key for emergency stop
-        if (event.key === 'Escape') {
-            this.handleEmergencyStop();
-        }
-    }
-    
     handlePageUnload() {
         // Cleanup when page is closing
         if (this.automation.isRunning) {
@@ -308,7 +265,6 @@ class UIManager {
         this.updateCycleCount();
         this.updateAutomationStatus();
         this.updateAutomationButtons(this.automation.isRunning);
-        this.updateJointDisplays(this.robot.currentAngles || [0, 0, 0, 0, 0, 0]);
     }
     
     updateBinCounts() {
@@ -334,7 +290,7 @@ class UIManager {
         let action = 'Waiting...';
         
         if (this.automation.isRunning) {
-            status = this.automation.isPaused ? 'Paused' : 'Running';
+            status = this.automation.isPausedUser ? 'Paused' : 'Running';
             action = this.automation.currentAction || 'Processing...';
         }
         
@@ -371,24 +327,7 @@ class UIManager {
             }
         }
     }
-    
-    toggleManualControls(enabled) {
-        // Toggle joint sliders
-        Object.values(this.elements.jointSliders).forEach(slider => {
-            if (slider) {
-                slider.disabled = !enabled;
-            }
-        });
-        
-        // Toggle manual control buttons
-        if (this.elements.resetBtn) {
-            this.elements.resetBtn.disabled = !enabled;
-        }
-        if (this.elements.testMovementBtn) {
-            this.elements.testMovementBtn.disabled = !enabled;
-        }
-        
-        // Update manual override section styling
+    toggleOverrideControls(enabled) {
         const manualSection = document.getElementById('manual-override');
         if (manualSection) {
             if (enabled) {
@@ -396,6 +335,20 @@ class UIManager {
             } else {
                 manualSection.classList.add('disabled');
             }
+        }
+    }
+
+    updatePauseResumeButtons() {
+        if (this.automation.isPausedUser) {
+            // Show Resume, hide Pause
+            this.elements.pauseBtn.style.display = 'none';
+            this.elements.resumeBtn.style.display = '';
+            this.elements.resumeBtn.disabled = false;
+        } else {
+            // Show Pause, hide Resume
+            this.elements.pauseBtn.style.display = '';
+            this.elements.resumeBtn.style.display = 'none';
+            this.elements.pauseBtn.disabled = false;
         }
     }
     
@@ -484,60 +437,7 @@ class UIManager {
             this.elements.rightBinCount.textContent = rightCount;
         }
     }
-    
-    // Add this method to expose emergency stop functionality
-    triggerEmergencyStop(reason = "External trigger") {
-        console.log(`🚨 Emergency stop triggered: ${reason}`);
-        
-        // Use your existing emergency stop button functionality
-        const emergencyBtn = document.getElementById('emergencyStop'); // <-- FIXED ID
-        if (emergencyBtn) {
-            emergencyBtn.click();
-            // Or call the emergency stop function directly if you have it
-            // this.handleEmergencyStop();
-        }
-        
-        // Update UI to show reason
-        this.showEmergencyReason(reason);
-    }
-    
-    showEmergencyReason(reason) {
-        // Update emergency stop button text or add reason display
-        const emergencyBtn = document.getElementById('emergencyStop'); // <-- FIXED ID
-        if (emergencyBtn) {
-            const originalText = emergencyBtn.textContent;
-            emergencyBtn.textContent = `🚨 EMERGENCY: ${reason}`;
-            
-            // Restore original text after 3 seconds
-            setTimeout(() => {
-                emergencyBtn.textContent = originalText;
-            }, 3000);
-        }
-    }
-    
-    toggleEmergencyResumeButtons(isEmergency) {
-        const emergencyBtn = this.elements.emergencyStopBtn;
-        const resumeBtn = document.getElementById('resumeEmergency');
-        if (isEmergency) {
-            if (emergencyBtn) emergencyBtn.disabled = true;
-            if (resumeBtn) resumeBtn.disabled = false;
-            if (emergencyBtn) emergencyBtn.style.display = 'none';
-            if (resumeBtn) resumeBtn.style.display = '';
-        } else {
-            if (emergencyBtn) emergencyBtn.disabled = false;
-            if (resumeBtn) resumeBtn.disabled = true;
-            if (emergencyBtn) emergencyBtn.style.display = '';
-            if (resumeBtn) resumeBtn.style.display = 'none';
-        }
-    }
-    
-    handleResumeEmergency() {
-        if (this.emergencyManager && this.emergencyManager.forceEmergencyResume) {
-            this.emergencyManager.forceEmergencyResume();
-        }
-        this.toggleEmergencyResumeButtons(false);
-        this.showStatus('Emergency cleared. Manual control enabled.', 'success');
-    }
+
 }
 
 // Make class globally available

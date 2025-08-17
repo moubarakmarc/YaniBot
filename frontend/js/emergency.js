@@ -20,7 +20,6 @@ class EmergencyManager {
     init() {
         this.createMovableSquare();
         this.setupEventListeners();
-        console.log("🚨 Emergency Manager initialized");
     }
     
     createMovableSquare() {
@@ -172,24 +171,21 @@ class EmergencyManager {
     }
     
     activateEmergencyMode() {
-        console.log("🚨 EMERGENCY MODE ACTIVATED! Object in safety zone.");
-        
-        // Trigger existing emergency stop button
-        this.triggerExistingEmergencyStop();
+        console.log("🚨 EMERGENCY MODE TRIGGERED!");
         
         // Change square color to red
         this.movableObject.material.color.setHex(0xFF0000);
+
+        this.isEmergencyMode = true;
         
         // Show emergency UI
         this.showEmergencyUI();
 
-        if (this.uiManager && this.uiManager.toggleEmergencyResumeButtons) {
-            this.uiManager.toggleEmergencyResumeButtons(true);
-        }
+        this.toggleEmergencyResumeButtons(true);
     }
     
     deactivateEmergencyMode() {
-        console.log("✅ Object left safety zone (emergency stop automatically turned off).");
+        console.log("✅ EMERGENCY MODE DEACTIVATED");
         
         // Change square color back to gold
         this.movableObject.material.color.setHex(0xFFD700);
@@ -202,83 +198,7 @@ class EmergencyManager {
             this.isEmergencyMode = false;
         }
 
-        if (this.robotManager && typeof this.robotManager.resumeFromEmergency === 'function') {
-            this.robotManager.resumeFromEmergency();
-            console.log("✅ RobotManager: Emergency state cleared, robot can move again.");
-        }
-
-        if (this.uiManager && this.uiManager.toggleEmergencyResumeButtons) {
-            this.uiManager.toggleEmergencyResumeButtons(false);
-        }
-    }
-    
-    triggerExistingEmergencyStop() {
-        console.log("🚨 Triggering existing emergency stop system...");
-        
-        // Try multiple common emergency stop button selectors (FIXED - removed invalid selector)
-        const emergencySelectors = [
-            '#emergencyStop', // Matches the button in index.html
-            '#emergency-stop-btn',
-            '#emergency-btn', 
-            '.emergency-stop',
-            '.emergency-btn',
-            '[data-action="emergency-stop"]',
-            'button[onclick*="emergency"]',
-            '.btn-emergency',
-            '.btn-danger' // Common Bootstrap emergency button class
-        ];
-        
-        let emergencyBtn = null;
-        
-        // Find the emergency stop button
-        for (const selector of emergencySelectors) {
-            try {
-                emergencyBtn = document.querySelector(selector);
-                if (emergencyBtn) {
-                    break;
-                }
-            } catch (selectorError) {
-                console.warn(`⚠️ Invalid selector: ${selector}`, selectorError);
-                continue;
-            }
-        }
-        
-        // If no button found by selector, try finding by text content
-        if (!emergencyBtn) {
-            console.log("🔍 Searching for emergency button by text content...");
-            emergencyBtn = this.findButtonByText(['Emergency', 'EMERGENCY', 'Stop', 'STOP', 'E-Stop']);
-        }
-        
-        // If button found, click it
-        if (emergencyBtn) {
-            emergencyBtn.click();
-            console.log("✅ Emergency stop button triggered successfully");
-        } else {
-            console.warn("⚠️ Emergency stop button not found! Showing warning only.");
-            // Fallback: just show the warning UI without triggering button
-        }
-    }
-    
-    findButtonByText(textOptions) {
-        console.log("🔍 Searching buttons by text content:", textOptions);
-        
-        // Get all buttons on the page
-        const allButtons = document.querySelectorAll('button, input[type="button"], .btn');
-        
-        for (const button of allButtons) {
-            const buttonText = button.textContent || button.value || button.innerText || '';
-            const lowerText = buttonText.toLowerCase().trim();
-            
-            // Check if button text contains any of our emergency keywords
-            for (const option of textOptions) {
-                if (lowerText.includes(option.toLowerCase())) {
-                    return button;
-                }
-            }
-        }
-        
-        console.log("❌ No emergency button found by text content");
-        return null;
+        this.toggleEmergencyResumeButtons(false); 
     }
     
     showEmergencyUI() {
@@ -303,7 +223,7 @@ class EmergencyManager {
                     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                     animation: pulse 1s infinite;
                 ">
-                    🚨 EMERGENCY STOP - Object in Safety Zone! 🚨
+                    🚨 EMERGENCY STOP 🚨
                 </div>
                 <style>
                     @keyframes pulse {
@@ -324,27 +244,23 @@ class EmergencyManager {
             emergencyDiv.style.display = 'none';
         }
     }
-    
-    // Public methods
+
+    toggleEmergencyResumeButtons(isEmergency) {
+        const emergencyBtn = document.getElementById('emergencyStop');
+        const resumeEbtn = document.getElementById('resumeEmergency');
+        if (!emergencyBtn || !resumeEbtn) return;
+
+        if (isEmergency) {
+            emergencyBtn.style.display = 'none';
+            resumeEbtn.style.display = '';
+        } else {
+            emergencyBtn.style.display = '';
+            resumeEbtn.style.display = 'none';
+        }
+    }
+        
     getEmergencyStatus() {
         return this.isEmergencyMode;
-    }
-    
-    forceEmergencyStop() {
-        this.isEmergencyMode = true;
-        this.activateEmergencyMode();
-    }
-
-    forceEmergencyResume() {
-    this.isEmergencyMode = false;
-        if (this.robotManager && typeof this.robotManager.resumeFromEmergency === 'function') {
-            this.robotManager.resumeFromEmergency(); // This must clear the backend emergency state!
-            console.log("✅ RobotManager: Emergency state cleared, robot can move again.");
-        }
-        // Optionally update UI
-        if (this.uiManager && this.uiManager.toggleEmergencyResumeButtons) {
-            this.uiManager.toggleEmergencyResumeButtons(false);
-    }
     }
 }
 

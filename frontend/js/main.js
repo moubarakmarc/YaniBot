@@ -1,11 +1,3 @@
-// main.js - Clean entry point
-console.log("🔥 YaniBot Loading...");
-console.log("🔍 Class check:");
-console.log("- SceneManager:", typeof SceneManager);
-console.log("- RobotManager:", typeof RobotManager);
-console.log("- AutomationManager:", typeof AutomationManager);
-console.log("- UIManager:", typeof UIManager);
-
 let app = {};
 let robot; // Make robot accessible
 
@@ -77,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             app.ui = new UIManager(app.robot, app.automation);
             app.ui.init()
             app.automation.ui = app.ui; // Pass UI to automation manager
+            app.robot.ui = app.ui; // Pass UI to robot
             
             // Then initialize emergency system with UI reference
             if (typeof EmergencyManager !== 'undefined') {
@@ -91,10 +84,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.warn("⚠️ EmergencyManager not available - skipping emergency system");
                 app.emergency = null;
             }
-            
-            // Update UI manager with emergency reference
+
+            // Update UI manager and AutomationManager with emergency reference
             app.ui.emergencyManager = app.emergency;
-            
+            app.automation.emergencyManager = app.emergency;
+
             updateLoadingStatus("Connecting to backend...");
             
             // Initialize API (optional - can fail gracefully)
