@@ -38,11 +38,7 @@ class AutomationManager {
         this.isPausedEmergency = false;
         this.isPausedUser = false;
         if (this.automationInterval) clearTimeout(this.automationInterval);
-        if (this.currentlyHeldObject) {
-            this.binManager.dropObject(this.currentlyHeldObject, 'left');
-            this.currentlyHeldObject = null;
-        }
-        await this.robot.moveTo(this.robot.positions.home, 2000);
+        //await this.robot.moveTo(this.robot.positions.home, 2000);
         this.currentAction = 'Stopped';
         this.stopEmergencyMonitor();
         console.log('✅ Automation stopped');
