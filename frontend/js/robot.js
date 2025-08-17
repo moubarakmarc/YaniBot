@@ -18,7 +18,6 @@ class RobotManager {
         this.axisMapping = ['z', 'y', 'y', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
         this.isMoving = false;
         this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
-        this.axesHelper = null;
         this.isEmergencyMode = false;
         this.queuedMovements = [];
     }
@@ -34,7 +33,6 @@ class RobotManager {
         }
         this.scene = this.sceneManager.scene;
         this.buildRobot();
-        this.addAxesHelpers();
         this.addRobotLighting();      
         
         console.log("🤖 Enhanced ABB IRB6600 robot initialized");
@@ -252,23 +250,6 @@ class RobotManager {
         joint6.add(tcp);
         
         return joint6;
-    }
-    
-    addAxesHelpers() {
-        // Create and STORE the main axes reference
-        this.axesHelper = new THREE.AxesHelper(1.5);
-        this.axesHelper.rotation.x = -Math.PI / 2; // Rotate -90° to make Z point up
-        this.axesHelper.name = "MainAxes";
-        this.scene.add(this.axesHelper);
-        
-        // Add smaller axes to each joint with same rotation
-        this.joints.forEach((joint, index) => {
-            const jointAxes = new THREE.AxesHelper(0.3);
-            jointAxes.rotation.x = -Math.PI / 2; // Same rotation for consistency
-            jointAxes.name = `Joint${index+1}_Axes`;
-            joint.add(jointAxes);
-        });
-        
     }
     
     // Enhanced lighting for better robot visualization
