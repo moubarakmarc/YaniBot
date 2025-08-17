@@ -12,9 +12,6 @@
     <div id="ui">
         <div class="ui-header">
             <h1>🤖 YaniBot Control Panel</h1>
-            <div class="connection-status">
-                <span id="backend-status" class="status-indicator">🔴 Connecting...</span>
-            </div>
         </div>
 
         <!-- Quick Action Buttons -->
@@ -133,9 +130,7 @@
             
             <!-- Manual Control Buttons -->
             <div class="manual-buttons">
-                <button id="resetJoints" class="btn-reset">🏠 Reset to Home</button>
-                <button id="savePosition" class="btn-utility">💾 Save Position</button>
-                <button id="loadPosition" class="btn-utility">📁 Load Position</button>
+                <button id="resetJoints" class="btn-reset">🏠 Reset to Home</button> 
             </div>
         </div>
 
@@ -144,28 +139,12 @@
             <h3>📊 Workspace Layout</h3>
             <div class="workspace-legend">
                 <div class="workspace-item">
-                    <span class="workspace-color blue"></span>
-                    <span>Input Bin (Left)</span>
-                </div>
-                <div class="workspace-item">
-                    <span class="workspace-color green"></span>
-                    <span>Output Bin (Right)</span>
-                </div>
-                <div class="workspace-item">
-                    <span class="workspace-color yellow"></span>
+                    <span class="workspace-color red"></span>
                     <span>Safety Boundaries</span>
                 </div>
                 <div class="workspace-item">
-                    <span class="workspace-color red"></span>
-                    <span>X-Axis (Roll)</span>
-                </div>
-                <div class="workspace-item">
-                    <span class="workspace-color green"></span>
-                    <span>Y-Axis (Pitch)</span>
-                </div>
-                <div class="workspace-item">
-                    <span class="workspace-color blue"></span>
-                    <span>Z-Axis (Yaw)</span>
+                    <span class="workspace-color yellow"></span>
+                    <span>Workspace Boundaries</span>
                 </div>
             </div>
         </div>
