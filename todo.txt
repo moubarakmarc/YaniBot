@@ -1,3 +1,2 @@
 -after stop the robot still has the object on this tcp
-- add reset button for scene
 - add a bit more joint movement 

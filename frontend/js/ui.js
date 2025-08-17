@@ -18,6 +18,8 @@ class UIManager {
     
     cacheElements() {
         this.elements = {
+            resetSceneBtn: document.getElementById('resetScene'),
+            
             // Automation controls
             startBtn: document.getElementById('startAutomation'),
             stopBtn: document.getElementById('stopAutomation'),
@@ -54,6 +56,7 @@ class UIManager {
     
     bindEvents() {
         // Automation control events
+        this.elements.resetSceneBtn?.addEventListener('click', () => this.handleResetScene());
         this.elements.startBtn?.addEventListener('click', () => this.handleStartAutomation());
         this.elements.stopBtn?.addEventListener('click', () => this.handleStopAutomation());
         this.elements.pauseBtn?.addEventListener('click', () => this.handlePauseAutomation());
@@ -104,6 +107,27 @@ class UIManager {
     }
     
     // Event Handlers
+    async handleResetScene() {
+        try {
+            this.showStatus('Resetting scene...', 'info');
+            // Stop automation if running
+            if (this.automation.isRunning) {
+                await this.automation.stop();
+            }
+            // Reset the scene
+            if (this.robot && this.robot.scene && this.robot.scene.reset) {
+                await this.robot.scene.reset();
+            } else {
+                // Fallback: reload the page
+                location.reload();
+            }
+            this.showStatus('Scene reset!', 'success');
+        } catch (error) {
+            console.error('Failed to reset scene:', error);
+            this.showStatus(`Failed to reset scene: ${error.message}`, 'error');
+        }
+    }
+    
     async handleStartAutomation() {
         try {
             this.showStatus('Starting automation...', 'info');

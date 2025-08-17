@@ -219,7 +219,12 @@ class SceneManager {
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
-    
+
+    reset() {
+        // Reset the scene to its initial state
+        location.reload();
+        console.log("🔄 Scene reset");
+    }
 }
 
 class WorkstationManager {
