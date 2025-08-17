@@ -58,11 +58,6 @@ class EmergencyManager {
         this.renderer.domElement.addEventListener('mousedown', (event) => this.onMouseDown(event));
         this.renderer.domElement.addEventListener('mousemove', (event) => this.onMouseMove(event));
         this.renderer.domElement.addEventListener('mouseup', (event) => this.onMouseUp(event));
-        
-        // Touch events for mobile
-        this.renderer.domElement.addEventListener('touchstart', (event) => this.onTouchStart(event));
-        this.renderer.domElement.addEventListener('touchmove', (event) => this.onTouchMove(event));
-        this.renderer.domElement.addEventListener('touchend', (event) => this.onTouchEnd(event));
     }
     
     updateMousePosition(event) {
@@ -126,28 +121,6 @@ class EmergencyManager {
             this.renderer.domElement.style.cursor = 'default';
             console.log("📦 Stopped dragging square");
         }
-    }
-    
-    // Touch events (for mobile support)
-    onTouchStart(event) {
-        if (event.touches.length === 1) {
-            event.preventDefault();
-            const touch = event.touches[0];
-            this.onMouseDown({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => {} });
-        }
-    }
-    
-    onTouchMove(event) {
-        if (event.touches.length === 1) {
-            event.preventDefault();
-            const touch = event.touches[0];
-            this.onMouseMove({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => {} });
-        }
-    }
-    
-    onTouchEnd(event) {
-        event.preventDefault();
-        this.onMouseUp({ preventDefault: () => {} });
     }
     
     checkEmergencyZone() {

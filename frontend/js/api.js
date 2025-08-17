@@ -1,45 +1,63 @@
-/**
- * APIManager handles communication with the backend API for robot control.
- * Provides methods to move the robot, get its state, and reset it.
- */
 class APIManager {
-    /**
-     * Initializes the APIManager with the base URL of the backend API.
-     */
-    constructor() {}
+    constructor() {
+        this.baseURL = window.ENV.BACKEND_URL;
+        if (!this.baseURL) throw new Error("Backend URL is not defined in environment configuration");
+    }
 
-    /**
-     * Sends a request to move the robot to the specified angles.
-     * @param {number[]} angles - Array of target joint angles.
-     * @returns {Promise<Object>} The response from the API.
-     */
-    async move(angles) {}
+    async move(angles) {
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.MOVE}`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ target_angles: angles })
+            });
+            const responseText = await response.text();
+            if (!response.ok) throw new Error(responseText);
+            return JSON.parse(responseText);
+        } catch (error) {
+            console.warn('⚠️ Backend communication failed:', error.message);
+            return null;
+        }
+    }
 
-    /**
-     * Retrieves the current state of the robot.
-     * @returns {Promise<Object>} The current state from the API.
-     */
-    async getState() {}
+    async getState() {
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.STATE}`);
+            if (!response.ok) throw new Error(`Backend error: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.warn('⚠️ Failed to get backend state:', error.message);
+            return null;
+        }
+    }
 
-    /**
-     * Sends a request to reset the robot.
-     * @returns {Promise<Object>} The response from the API.
-     */
-    async reset() {}
+    async reset() {
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.RESET}`, {
+                method: 'POST'
+            });
+            if (response.ok) return await response.json();
+        } catch (error) {
+            console.warn('⚠️ Backend reset failed:', error.message);
+        }
+    }
 
-    /**
-     * Sends a POST request to the specified API endpoint.
-     * @param {string} endpoint - The API endpoint to send the request to.
-     * @param {Object} [data] - The data to send in the request body.
-     * @returns {Promise<Object>} The response from the API.
-     * @throws {Error} If the response status is not OK.
-     */
-    async post(endpoint, data) {}
-
-    /**
-     * Sends a GET request to the specified API endpoint.
-     * @param {string} endpoint - The API endpoint to send the request to.
-     * @returns {Promise<Object>} The response from the API.
-     */
-    async get(endpoint) {}
+    async getInterpolatedPath(targetAngles, steps = 20) {
+        try {
+            const response = await fetch(`${this.baseURL}/interpolate?steps=${steps}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_angles: targetAngles })
+            });
+            if (!response.ok) throw new Error('Failed to fetch interpolated path');
+            const data = await response.json();
+            return data.steps;
+        } catch (error) {
+            console.warn('⚠️ Failed to get interpolated path:', error.message);
+            return null;
+        }
+    }
 }

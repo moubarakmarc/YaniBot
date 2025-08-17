@@ -6,6 +6,7 @@ class UIManager {
         this.emergencyManager = emergencyManager;
         this.elements = {};
         this.sliderDebounceTimers = {};
+        this.api = null; 
     }
     
     init() {
@@ -45,9 +46,7 @@ class UIManager {
         // Cache joint sliders and value displays
         for (let i = 1; i <= 6; i++) {
             this.elements.jointSliders[`a${i}`] = document.getElementById(`a${i}-slider`);
-            console.log(this.elements.jointSliders[`a${i}`]);
             this.elements.jointValues[`a${i}`] = document.getElementById(`a${i}-value`);
-            console.log(this.elements.jointValues[`a${i}`]);
         }
         console.log("🗂️ UI Elements cached");
         
@@ -193,8 +192,8 @@ class UIManager {
         
         try {
             this.showStatus('Resetting robot...', 'info');
-            await this.robot.reset([0, 0, 0, 0, 0, 0]);
-            this.updateJointDisplays([0, 0, 0, 0, 0, 0]);
+            await this.api.reset();
+            this.updateJointDisplays([0.0, 30.0, 55.0, 0.0, 0.0, 0.0]);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);
@@ -245,7 +244,7 @@ class UIManager {
                 this.robot.currentAngles[jointIndex] = angle;
                 
                 // Send full joint state to backend
-                await this.robot.sendToBackend(this.robot.currentAngles);
+                await this.api.move(this.robot.currentAngles);
             }
         } catch (error) {
             console.error('Failed to update backend:', error);
@@ -410,32 +409,6 @@ class UIManager {
                 }
             }, 300);
         }, 3000);
-    }
-    
-    // Public methods for external updates
-    setAutomationStatus(status, action) {
-        if (this.elements.automationStatus) {
-            this.elements.automationStatus.textContent = status;
-        }
-        if (this.elements.currentAction) {
-            this.elements.currentAction.textContent = action;
-        }
-    }
-    
-    incrementCycleCount() {
-        const current = parseInt(this.elements.cycleCount?.textContent || '0');
-        if (this.elements.cycleCount) {
-            this.elements.cycleCount.textContent = current + 1;
-        }
-    }
-    
-    setBinCounts(leftCount, rightCount) {
-        if (this.elements.leftBinCount) {
-            this.elements.leftBinCount.textContent = leftCount;
-        }
-        if (this.elements.rightBinCount) {
-            this.elements.rightBinCount.textContent = rightCount;
-        }
     }
 
 }

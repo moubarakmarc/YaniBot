@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateLoadingStatus("Building robot model...");
             
             // Initialize robot with the scene
-            app.robot = new RobotManager(app.scene);
+            app.robot = new RobotManager(app.scene, RobotBuilder);
             await app.robot.init();
             robot = app.robot; // Make robot globally accessible
             window.robot = robot; // For debugging
@@ -91,9 +91,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             updateLoadingStatus("Connecting to backend...");
             
-            // Initialize API (optional - can fail gracefully)
+            // Initialize API
             try {
                 app.api = new APIManager();
+                app.robot.api = app.api; // Pass API to robot manager
+                app.automation.api = app.api; // Pass API to automation manager
+                app.ui.api = app.api; // Pass API to UI manager
+                
+                // Initialize API manager
                 console.log("✅ API Manager initialized");
             } catch (apiError) {
                 console.warn("⚠️ API Manager failed to initialize:", apiError);
@@ -108,6 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 robot: !!app.robot,
                 automation: !!app.automation,
                 ui: !!app.ui,
+                emergency: !!app.emergency,
                 api: !!app.api
             });
             
