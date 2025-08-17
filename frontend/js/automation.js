@@ -14,7 +14,7 @@ class AutomationManager {
         this.currentAction = 'Ready';
         this.cycleDelay = 2000;
         this.automationInterval = null;
-        this.strategy = null;
+        this.strategy = 'left-to-right'; // Default strategy
     }
 
     async init() {
@@ -75,9 +75,12 @@ class AutomationManager {
             if (this.ui && this.ui.updateAutomationStatus) this.ui.updateAutomationStatus();
             return false;
         }
-
         await this.pickAndPlace(sourceBin, targetBin);
-        this.ui.showStatus('Automation started successfully', 'success');
+        
+        // Update cycle count in UI after each cycle
+        if (this.ui && this.ui.updateCycleCount) {
+            this.ui.updateCycleCount();
+        }
         console.log(`✅ Cycle ${this.cycleCount} completed`);
         return true;
     }

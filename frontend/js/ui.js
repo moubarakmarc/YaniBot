@@ -110,6 +110,7 @@ class UIManager {
             await this.automation.start();
             this.updateAutomationButtons(true);
             this.toggleOverrideControls(false);
+            this.showStatus('Automation Starting...', 'success');
             this.updateDisplay();
         } catch (error) {
             console.error('Failed to start automation:', error);
