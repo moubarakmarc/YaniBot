@@ -482,13 +482,13 @@ class RobotManager {
             home: [0,0,0,0,0,0], // Default home position
             
             // Realistic ABB IRB6600 positions
-            leftBinApproach: [-45.0, 50.0, 55.0, 0.0, 0.0, 1.0],
-            leftBinPick: [-45.0,75.0,55.0,0.0,35.0,1.0],
-            leftBinLift: [-45.0,50.0,55.0,0.0,0.0,1.0],
+            leftBinApproach: [-45.0, 50.0, 55.0, 0.0, 0.0, 0.0],
+            leftBinPick: [-45.0,75.0,55.0,0.0,35.0,10.0],
+            leftBinLift: [-45.0,50.0,55.0,0.0,0.0,0.0],
 
-            rightBinApproach: [45.0,50.0,55.0,0.0,0.0,1.0],
-            rightBinDrop: [45.0,75.0,55.0,0.0,0.0,1.0],
-            rightBinLift: [45.0,50.0,55.0,0.0,0.0,1.0],
+            rightBinApproach: [45.0,50.0,55.0,0.0,0.0,0.0],
+            rightBinDrop: [45.0,75.0,55.0,0.0,35.0,-10.0],
+            rightBinLift: [45.0,50.0,55.0,0.0,0.0,0.0],
 
             // Safe intermediate positions
             intermediate1: [0.0, 30.0, 55.0, 0.0, 0.0, 0.0],
