@@ -13,7 +13,7 @@ class RobotManager {
         this.joints = [];
         this.robotSegments = [];
         this.robotRoot = null;
-        this.currentAngles = [0, -30, 40, 0, -15, 0];
+        this.currentAngles = [0.0, -30.0, 40.0, 0.0, -15.0, 0.0];
         this.positions = this.getPresetPositions();
         this.axisMapping = ['z', 'y', 'y', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
         this.isMoving = false;
@@ -47,7 +47,7 @@ class RobotManager {
     
 
     // Movement Methods
-    async moveTo(angles, duration = 2000, waitWhilePaused = null) {
+    async moveTo(start_angles, target_angles, duration = 2000, waitWhilePaused = null) {
         while (this.isMoving) {
             console.warn('Robot is already moving, ignoring new command');
             await this.sleep(50);
@@ -55,16 +55,13 @@ class RobotManager {
         
         try {
             this.isMoving = true;
-            console.log(`🤖 Moving robot to: [${angles.map(a => Math.round(a)).join(', ')}]°`);
-            
-            // Send to backend first
-            await this.api.move(angles);
-            
+            const path = await this.api.getInterpolatedPath(start_angles, target_angles, 30);
+
             // Animate visual robot
-            await this.animateToPosition(angles, duration, waitWhilePaused);
+            await this.animateToPosition(path, duration, waitWhilePaused);
             
             // Update current state
-            this.currentAngles = [...angles];
+            this.currentAngles = [...path[path.length - 1]];
             
             console.log('✅ Robot movement completed');
             
@@ -76,42 +73,17 @@ class RobotManager {
         }
     }
     
-    async animateToPosition(targetAngles, duration = 2000, waitWhilePaused= null) {
-        return new Promise((resolve) => {
-            const startAngles = [...this.currentAngles];
-            const steps = Math.max(30, Math.floor(duration / 50)); // At least 30 steps
-            const stepDuration = duration / steps;
-            let currentStep = 0;
-            
-            const animateStep = async () => {
-                if (currentStep >= steps) {
-                    // Ensure final position is exact
-                    this.setJointAngles(targetAngles);
-                    resolve();
-                    return;
-                }
-                
-                if (waitWhilePaused) await waitWhilePaused();
-
-                // Calculate interpolated angles with smooth easing
-                const progress = currentStep / steps;
-                const smoothProgress = this.easeInOutCubic(progress);
-                
-                const currentAngles = startAngles.map((start, i) => {
-                    const target = targetAngles[i];
-                    return start + (target - start) * smoothProgress;
-                });
-                
-                this.setJointAngles(currentAngles);
-
-                this.ui.updateJointDisplays(currentAngles);
-
-                currentStep++;
-                setTimeout(animateStep, stepDuration);
-            };
-            
-            animateStep();
-        });
+    async animateToPosition(path, duration = 2000, waitWhilePaused = null) {
+        if (!Array.isArray(path) || path.length === 0) return;
+        // Animate through the path
+        for (let i = 0; i < path.length; i++) {
+            if (waitWhilePaused) await waitWhilePaused();
+            this.setJointAngles(path[i]);
+            if (this.ui && this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
+            await this.sleep(duration / path.length);
+        }
+        // Optionally update currentAngles to last pose
+        this.currentAngles = [...path[path.length - 1]];
     }
     
     setJointAngles(angles) {
@@ -184,48 +156,10 @@ class RobotManager {
         };
     }
     
-    // Helper Methods
-    easeInOutCubic(t) {
-        return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
-    }
-    
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
     
-    // Get current end-effector position
-    getEndEffectorPosition() {
-        if (this.joints[5]) {
-            const worldPosition = new THREE.Vector3();
-            this.joints[5].getWorldPosition(worldPosition);
-            return worldPosition;
-        }
-        return new THREE.Vector3(0, 0, 0);
-    }
-    
-    resumeFromEmergency() {
-        this.isEmergencyMode = false;
-        console.log("✅ Robot resumed from emergency mode");
-        
-        // Restore normal robot color
-        this.setEmergencyVisual(false);
-        
-        // Resume any queued movements if needed
-        // this.resumeQueuedMovements();
-    }
-    
-    setEmergencyVisual(isEmergency) {
-        // Change robot colors to indicate emergency state
-        this.robotSegments.forEach(segment => {
-            if (isEmergency) {
-                // Add red glow or change color
-                segment.material.emissive.setHex(0x440000); // Dark red glow
-            } else {
-                // Restore normal appearance
-                segment.material.emissive.setHex(0x000000); // No glow
-            }
-        });
-    }
 }
 
 // Make class globally available

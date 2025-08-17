@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 app.ui.api = app.api; // Pass API to UI manager
                 
                 // Initialize API manager
+                await app.api.init();
                 console.log("✅ API Manager initialized");
             } catch (apiError) {
                 console.warn("⚠️ API Manager failed to initialize:", apiError);

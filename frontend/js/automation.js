@@ -15,6 +15,7 @@ class AutomationManager {
         this.cycleDelay = 2000;
         this.automationInterval = null;
         this.strategy = 'left-to-right'; // Default strategy
+        this.api = null; // Will be set by APIManager
     }
 
     async init() {
@@ -93,13 +94,11 @@ class AutomationManager {
 
             // 1. Move to pick position (home → approach → pick)
             await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.positions.intermediate1, 700, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, approachPos, 700, this.waitWhilePaused.bind(this));
             await this.waitWhilePaused();
-            await this.robot.moveTo(approachPos, 700, this.waitWhilePaused.bind(this));
-            await this.waitWhilePaused();
-            await this.robot.moveTo(pickPos, 600, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, pickPos, 700, this.waitWhilePaused.bind(this));
 
-            // 2. Pick object
+            /// 2. Pick object
             await this.waitWhilePaused();
             await this.pickObject(sourceBin);
 
@@ -107,13 +106,13 @@ class AutomationManager {
 
             // 3. Move to drop position (pick → lift → intermediate → dropApproach → drop)
             await this.waitWhilePaused();
-            await this.robot.moveTo(liftPos, 700, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, liftPos, 700, this.waitWhilePaused.bind(this));
             await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.positions.intermediate1, 700, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700, this.waitWhilePaused.bind(this));
             await this.waitWhilePaused();
-            await this.robot.moveTo(dropApproachPos, 700, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, dropApproachPos, 700, this.waitWhilePaused.bind(this));
             await this.waitWhilePaused();
-            await this.robot.moveTo(dropPos, 600, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, dropPos, 600, this.waitWhilePaused.bind(this));
 
             // 4. Drop object
             await this.waitWhilePaused();
@@ -123,9 +122,9 @@ class AutomationManager {
 
             // 5. Move back home (drop → dropLift → home)
             await this.waitWhilePaused();
-            await this.robot.moveTo(dropLiftPos, 700, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, dropLiftPos, 700, this.waitWhilePaused.bind(this));
             await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.positions.intermediate1, 700, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700, this.waitWhilePaused.bind(this));
 
         } catch (error) {
             console.error('Pick and place failed:', error);

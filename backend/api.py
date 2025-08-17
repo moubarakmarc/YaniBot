@@ -31,20 +31,9 @@ class MoveRequest(BaseModel):
             raise ValueError('Must provide exactly 6 angles')
         return v
 
-class InterpolateMultiRequest(BaseModel):
-    waypoints: list[list[float]] = Field(..., min_items=2)
-    steps_per_segment: int = 20
-
-    @validator('waypoints')
-    def validate_waypoints(cls, v):
-        for w in v:
-            if len(w) != 6:
-                raise ValueError('Each waypoint must have exactly 6 angles')
-        return v
-    
-class MoveMultiRequest(BaseModel):
-    waypoints: list[list[float]]
-    steps_per_segment: int = 20
+class InterpolateRequest(BaseModel):
+    start_angles: list[float] = Field(..., min_items=6, max_items=6)
+    target_angles: list[float] = Field(..., min_items=6, max_items=6)
     
 @app.get("/")
 def root():
@@ -67,42 +56,9 @@ def health_check():
 def get_state():
     """Retrieve the current angles of the robot."""
     return {
-        "current_angles": robot.current_angles,
-        "joint_limits": robot.joint_limits
+        #"current_angles": robot.current_angles,
+        #"joint_limits": robot.joint_limits
     }
-
-@app.post("/move")
-def move_robot(request: MoveRequest):
-    """Moves the robot to the specified target joint angles using smooth interpolation."""
-    try:
-        path = robot.move_to(request.target_angles)
-        return {
-            "success": True,
-            "steps": path, 
-            "final_angles": robot.current_angles,
-            "message": f"Robot moved to {request.target_angles}"
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.post("/move-multi")
-def move_multi(request: MoveMultiRequest):
-    """
-    Moves the robot along a multi-waypoint path.
-    """
-    try:
-        path = robot.interpolate_multi(request.waypoints, steps_per_segment=request.steps_per_segment)
-        for angles in path:
-            robot.move_to(angles, update_only=True)
-        return {
-            "success": True,
-            "steps": path,
-            "final_angles": robot.current_angles,
-            "message": f"Robot moved along multi-waypoint path"
-        }
-    except Exception as e:
-        print("Error in /move-multi:", e)
-        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/reset")
 def reset_robot():
@@ -125,34 +81,18 @@ def get_joint_limits():
 
 
 @app.post("/interpolate")
-def interpolate_path(request: MoveRequest, steps: int = 20):
+def interpolate_path(request: InterpolateRequest, steps: int = 20):
     """
     Returns a list of interpolated joint positions from current to target angles.
     """
     try:
-        path = robot.interpolate(request.target_angles, steps=steps)
+        path = list(robot.interpolate(request.start_angles, request.target_angles, steps=steps))
         return {
             "success": True,
             "steps": path,
-            "message": f"Interpolated path to {request.target_angles} in {steps} steps"
+            "message": f"Interpolated path from {request.start_angles} to {request.target_angles} in {steps} steps"
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
-@app.post("/interpolate-multi")
-def interpolate_multi_path(request: InterpolateMultiRequest):
-    """
-    Returns a list of interpolated joint positions for a sequence of waypoints.
-    """
-    try:
-        path = robot.interpolate_multi(request.waypoints, steps_per_segment=request.steps_per_segment)
-        return {
-            "success": True,
-            "steps": path,
-            "message": f"Interpolated multi-waypoint path with {len(request.waypoints)} waypoints"
-        }
-    except Exception as e:
-        print("Error in /move-multi:", e)
         raise HTTPException(status_code=400, detail=str(e))
     
 

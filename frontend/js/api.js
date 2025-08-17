@@ -4,6 +4,19 @@ class APIManager {
         if (!this.baseURL) throw new Error("Backend URL is not defined in environment configuration");
     }
 
+    async init() {
+        // Try to fetch backend state or health endpoint
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.STATE}`);
+            if (!response.ok) throw new Error(`Backend not reachable: ${response.status}`);
+            // Optionally, check response content here
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to connect to backend:', error.message);
+            throw new Error('Backend connection failed');
+        }
+    }
+
     async move(angles) {
         try {
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.MOVE}`, {
@@ -45,19 +58,18 @@ class APIManager {
         }
     }
 
-    async getInterpolatedPath(targetAngles, steps = 20) {
-        try {
-            const response = await fetch(`${this.baseURL}/interpolate?steps=${steps}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ target_angles: targetAngles })
-            });
-            if (!response.ok) throw new Error('Failed to fetch interpolated path');
-            const data = await response.json();
-            return data.steps;
-        } catch (error) {
-            console.warn('⚠️ Failed to get interpolated path:', error.message);
-            return null;
-        }
+    async getInterpolatedPath( startAngles = null, targetAngles, steps = 20) {
+        const payload = startAngles
+            ? { start_angles: startAngles, target_angles: targetAngles }
+            : { target_angles: targetAngles };
+        const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.INTERPOLATE}?steps=${steps}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error('Failed to fetch interpolated path');
+        const data = await response.json();
+        console.log("Interpolated path:", data);
+        return data.steps;
     }
 }
