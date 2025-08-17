@@ -38,14 +38,17 @@ class UIManager {
             // Other controls
             emergencyStopBtn: document.getElementById('emergencyStop'),
         };
-        
+
         // Cache joint sliders and value displays
         for (let i = 1; i <= 6; i++) {
             this.elements.jointSliders[`a${i}`] = document.getElementById(`a${i}-slider`);
+            console.log(this.elements.jointSliders[`a${i}`]);
             this.elements.jointValues[`a${i}`] = document.getElementById(`a${i}-value`);
+            console.log(this.elements.jointValues[`a${i}`]);
         }
-        
         console.log("🗂️ UI Elements cached");
+        
+        
     }
     
     bindEvents() {
@@ -96,8 +99,9 @@ class UIManager {
             this.showStatus('Starting automation...', 'info');
             await this.automation.start();
             this.updateAutomationButtons(true);
-            this.toggleManualControls(false);
+            this.toggleOverrideControls(false);
             this.showStatus('Automation started successfully', 'success');
+            this.updateDisplay();
         } catch (error) {
             console.error('Failed to start automation:', error);
             this.showStatus(`Failed to start: ${error.message}`, 'error');
@@ -110,8 +114,9 @@ class UIManager {
             this.showStatus('Stopping automation...', 'info');
             await this.automation.stop();
             this.updateAutomationButtons(false);
-            this.toggleManualControls(true);
+            this.toggleOverrideControls(true);
             this.showStatus('Automation stopped', 'warning');
+            this.updateDisplay();
         } catch (error) {
             console.error('Failed to stop automation:', error);
             this.showStatus(`Failed to stop: ${error.message}`, 'error');
@@ -294,21 +299,7 @@ class UIManager {
             }
         }
     }
-    
-    toggleManualControls(enabled) {
-        // Toggle joint sliders
-        Object.values(this.elements.jointSliders).forEach(slider => {
-            if (slider) {
-                slider.disabled = !enabled;
-            }
-        });
-        
-        // Toggle manual control buttons
-        if (this.elements.resetBtn) {
-            this.elements.resetBtn.disabled = !enabled;
-        }
-        
-        // Update manual override section styling
+    toggleOverrideControls(enabled) {
         const manualSection = document.getElementById('manual-override');
         if (manualSection) {
             if (enabled) {

@@ -24,11 +24,11 @@ class AutomationManager {
     async start() {
         if (this.isRunning) return;
         if (this.binManager.isEmpty()) throw new Error('No objects to move - reset the scene first');
-        this.startEmergencyMonitor();
         this.isRunning = true;
+        this.startEmergencyMonitor();
         this.isPaused = false;
         this.cycleCount = 0;
-        await this.automationLoop();
+        this.automationLoop();
     }
 
     async stop() {

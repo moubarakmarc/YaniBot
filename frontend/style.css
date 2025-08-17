@@ -336,6 +336,7 @@ button:disabled {
 #manual-override.disabled {
     opacity: 0.5;
     pointer-events: none;
+    filter: grayscale(0.7);
 }
 
 .override-warning {
@@ -389,6 +390,11 @@ button:disabled {
     margin: 8px 0;
 }
 
+.joint-slider input[type="range"]:disabled {
+    opacity: 0.5;
+    filter: grayscale(0.7);
+    pointer-events: none;
+}
 .joint-slider input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
