@@ -51,11 +51,13 @@ class AutomationManager {
     async automationLoop() {
         while (this.isRunning) {
             try {
-                await this.performCycle();
+                const shouldContinue = await this.performCycle();
+                if (!shouldContinue) break; // Stop loop if bins are empty
                 await this.sleep(this.cycleDelay);
             } catch (error) {
                 console.error('Automation error:', error);
                 this.isRunning = false;
+                break;
             }
         }
     }
@@ -63,9 +65,19 @@ class AutomationManager {
     async performCycle() {
         this.cycleCount++;
         const { sourceBin, targetBin } = this.binManager.getTransferPair(this.strategy);
-        if (!sourceBin || !targetBin) throw new Error('No valid transfer pair available');
+
+        // Check if source bin is empty
+        if (!sourceBin || this.binManager.isEmpty(sourceBin)) {
+            console.log('🚫 No valid transfer pair available. Stopping automation.');
+            this.isRunning = false;
+            this.currentAction = 'Stopped: No objects left to move';
+            if (this.ui && this.ui.updateAutomationStatus) this.ui.updateAutomationStatus();
+            return false;
+        }
+
         await this.pickAndPlace(sourceBin, targetBin);
         console.log(`✅ Cycle ${this.cycleCount} completed`);
+        return true;
     }
 
     async pickAndPlace(sourceBin, targetBin) {
