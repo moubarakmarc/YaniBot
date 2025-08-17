@@ -233,7 +233,6 @@ class UIManager {
         this.updateCycleCount();
         this.updateAutomationStatus();
         this.updateAutomationButtons(this.automation.isRunning);
-        this.updateJointDisplays(this.robot.currentAngles || [0, 0, 0, 0, 0, 0]);
     }
     
     updateBinCounts() {

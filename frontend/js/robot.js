@@ -20,6 +20,7 @@ class RobotManager {
         this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
         this.isEmergencyMode = false;
         this.queuedMovements = [];
+        this.ui = null; // Will be set by UIManager
     }
     
     async init() {
@@ -330,7 +331,9 @@ class RobotManager {
                 });
                 
                 this.setJointAngles(currentAngles);
-                
+
+                this.ui.updateJointDisplays(currentAngles);
+
                 currentStep++;
                 setTimeout(animateStep, stepDuration);
             };

@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             app.ui = new UIManager(app.robot, app.automation);
             app.ui.init()
             app.automation.ui = app.ui; // Pass UI to automation manager
+            app.robot.ui = app.ui; // Pass UI to robot
             
             // Then initialize emergency system with UI reference
             if (typeof EmergencyManager !== 'undefined') {
