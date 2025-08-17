@@ -247,15 +247,15 @@ class EmergencyManager {
 
     toggleEmergencyResumeButtons(isEmergency) {
         const emergencyBtn = document.getElementById('emergencyStop');
-        const resumeBtn = document.getElementById('resumeEmergency');
-        if (!emergencyBtn || !resumeBtn) return;
+        const resumeEbtn = document.getElementById('resumeEmergency');
+        if (!emergencyBtn || !resumeEbtn) return;
 
         if (isEmergency) {
             emergencyBtn.style.display = 'none';
-            resumeBtn.style.display = '';
+            resumeEbtn.style.display = '';
         } else {
             emergencyBtn.style.display = '';
-            resumeBtn.style.display = 'none';
+            resumeEbtn.style.display = 'none';
         }
     }
         

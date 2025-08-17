@@ -64,9 +64,9 @@ class UIManager {
         // Window events
         window.addEventListener('beforeunload', () => this.handlePageUnload());
         
-        const resumeBtn = document.getElementById('resumeEmergency');
-        if (resumeBtn) {
-            resumeBtn.addEventListener('click', () => this.emergencyManager?.deactivateEmergencyMode());
+        const resumeEbtn = document.getElementById('resumeEmergency');
+        if (resumeEbtn) {
+            resumeEbtn.addEventListener('click', () => this.emergencyManager?.deactivateEmergencyMode());
         }
         
         console.log("🔗 UI Events bound");
