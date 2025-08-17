@@ -26,14 +26,24 @@ class BinManager {
     }
 
     getTransferPair(strategy = 'left-to-right') {
-        // Extend for more strategies if needed
         if (strategy === 'left-to-right') {
-            return { sourceBin: 'left', targetBin: 'right' };
+            if (this.leftBin.length > 0) {
+                return { sourceBin: 'left', targetBin: 'right' };
+            }
         } else if (strategy === 'right-to-left') {
-            return { sourceBin: 'right', targetBin: 'left' };
+            if (this.rightBin.length > 0) {
+                return { sourceBin: 'right', targetBin: 'left' };
+            }
+        } else if (strategy === 'bidirectional') {
+            // Example: alternate if both bins have objects, or pick the non-empty one
+            if (this.leftBin.length > 0) {
+                return { sourceBin: 'left', targetBin: 'right' };
+            } else if (this.rightBin.length > 0) {
+                return { sourceBin: 'right', targetBin: 'left' };
+            }
         }
-        // Add more strategies as needed
-        return { sourceBin: 'left', targetBin: 'right' };
+        // No valid transfer pair
+        return { sourceBin: null, targetBin: null };
     }
 
     pickupObject(binName) {

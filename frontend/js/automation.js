@@ -14,7 +14,7 @@ class AutomationManager {
         this.currentAction = 'Ready';
         this.cycleDelay = 2000;
         this.automationInterval = null;
-        this.strategy = 'left-to-right'; // or 'right-to-left', 'bidirectional'
+        this.strategy = null;
     }
 
     async init() {
@@ -69,6 +69,7 @@ class AutomationManager {
         // Check if source bin is empty
         if (!sourceBin || this.binManager.isEmpty(sourceBin)) {
             console.log('🚫 No valid transfer pair available. Stopping automation.');
+            this.ui.showStatus('Automation stopped: No objects left to move', 'warning');
             this.isRunning = false;
             this.currentAction = 'Stopped: No objects left to move';
             if (this.ui && this.ui.updateAutomationStatus) this.ui.updateAutomationStatus();
@@ -76,6 +77,7 @@ class AutomationManager {
         }
 
         await this.pickAndPlace(sourceBin, targetBin);
+        this.ui.showStatus('Automation started successfully', 'success');
         console.log(`✅ Cycle ${this.cycleCount} completed`);
         return true;
     }

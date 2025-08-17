@@ -70,6 +70,14 @@ class UIManager {
         if (resumeEbtn) {
             resumeEbtn.addEventListener('click', () => this.emergencyManager?.deactivateEmergencyMode());
         }
+
+        // Strategy selection event
+        const strategySelect = document.getElementById('automation-strategy');
+        if (strategySelect) {
+            strategySelect.addEventListener('change', (e) => {
+                this.automation.strategy = e.target.value;
+            });
+        }
         
         console.log("🔗 UI Events bound");
     }
@@ -102,7 +110,6 @@ class UIManager {
             await this.automation.start();
             this.updateAutomationButtons(true);
             this.toggleOverrideControls(false);
-            this.showStatus('Automation started successfully', 'success');
             this.updateDisplay();
         } catch (error) {
             console.error('Failed to start automation:', error);

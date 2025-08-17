@@ -1,6 +1,4 @@
 -after stop the robot still has the object on this tcp
-- fix strategy (left->right)
-- fix delax cycle
 - fix cycle count or name
 - add reset button for scene
 - add a bit more joint movement 
