@@ -336,6 +336,7 @@ button:disabled {
 #manual-override.disabled {
     opacity: 0.5;
     pointer-events: none;
+    filter: grayscale(0.7);
 }
 
 .override-warning {
@@ -389,6 +390,11 @@ button:disabled {
     margin: 8px 0;
 }
 
+.joint-slider input[type="range"]:disabled {
+    opacity: 0.5;
+    filter: grayscale(0.7);
+    pointer-events: none;
+}
 .joint-slider input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -518,52 +524,6 @@ button:disabled {
 .stat-value {
     color: #4a90e2;
     font-weight: bold;
-}
-
-/* Keyboard Shortcuts */
-#keyboard-shortcuts {
-    margin-bottom: 20px;
-    padding: 15px;
-    background: rgba(108, 117, 125, 0.05);
-    border-radius: 8px;
-    border: 1px solid #444;
-}
-
-#keyboard-shortcuts h4 {
-    margin: 0 0 10px 0;
-    color: #4a90e2;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-#keyboard-shortcuts h4:hover {
-    color: #5ba0f2;
-}
-
-.shortcuts-content {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.shortcut-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-}
-
-.shortcut-key {
-    background: #333;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    color: #4a90e2;
-    border: 1px solid #555;
 }
 
 /* Loading Screen */

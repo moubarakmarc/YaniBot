@@ -6,11 +6,7 @@ class SceneManager {
         this.renderer = null;
         this.workstation = null;
         this.controls = null;
-        this.axesHelpers = [];
         this.axesVisible = true;
-
-        // Don't initialize here - wait for init() method
-        console.log("🏗️ SceneManager constructor called");
     }
     
     async init() {
@@ -20,7 +16,6 @@ class SceneManager {
         this.createLighting();
         this.createGround();
         this.createWorkspace();
-        this.createAxesHelpers();
         this.setupControls();
         this.startRenderLoop();
         
@@ -143,15 +138,6 @@ class SceneManager {
         console.log("🏭 Workspace created");
     }
     
-    createAxesHelpers() {
-        // Global axes at origin
-        const globalAxes = new THREE.AxesHelper(2);
-        this.scene.add(globalAxes);
-        this.axesHelpers.push(globalAxes);
-        
-        console.log("🎯 Axes helpers created");
-    }
-    
     setupControls() {
         // Temporarily disable OrbitControls - set to false to use manual controls
         const useOrbitControls = false;
@@ -233,19 +219,11 @@ class SceneManager {
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
-    
-    toggleAxes() {
-        this.axesVisible = !this.axesVisible;
-        this.axesHelpers.forEach(helper => {
-            helper.visible = this.axesVisible;
-        });
-    }
-    
-    addAxesHelper(object, size = 1) {
-        const axes = new THREE.AxesHelper(size);
-        object.add(axes);
-        this.axesHelpers.push(axes);
-        return axes;
+
+    reset() {
+        // Reset the scene to its initial state
+        location.reload();
+        console.log("🔄 Scene reset");
     }
 }
 

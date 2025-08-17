@@ -18,9 +18,9 @@ class RobotManager {
         this.axisMapping = ['z', 'y', 'y', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
         this.isMoving = false;
         this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
-        this.axesHelper = null;
         this.isEmergencyMode = false;
         this.queuedMovements = [];
+        this.ui = null; // Will be set by UIManager
     }
     
     async init() {
@@ -34,7 +34,6 @@ class RobotManager {
         }
         this.scene = this.sceneManager.scene;
         this.buildRobot();
-        this.addAxesHelpers();
         this.addRobotLighting();      
         
         console.log("🤖 Enhanced ABB IRB6600 robot initialized");
@@ -254,23 +253,6 @@ class RobotManager {
         return joint6;
     }
     
-    addAxesHelpers() {
-        // Create and STORE the main axes reference
-        this.axesHelper = new THREE.AxesHelper(1.5);
-        this.axesHelper.rotation.x = -Math.PI / 2; // Rotate -90° to make Z point up
-        this.axesHelper.name = "MainAxes";
-        this.scene.add(this.axesHelper);
-        
-        // Add smaller axes to each joint with same rotation
-        this.joints.forEach((joint, index) => {
-            const jointAxes = new THREE.AxesHelper(0.3);
-            jointAxes.rotation.x = -Math.PI / 2; // Same rotation for consistency
-            jointAxes.name = `Joint${index+1}_Axes`;
-            joint.add(jointAxes);
-        });
-        
-    }
-    
     // Enhanced lighting for better robot visualization
     addRobotLighting() {
         // Dedicated robot lighting
@@ -293,10 +275,10 @@ class RobotManager {
     }
     
     // Movement Methods
-    async moveTo(angles, duration = 2000) {
-        if (this.isMoving) {
+    async moveTo(angles, duration = 2000, waitWhilePaused = null) {
+        while (this.isMoving) {
             console.warn('Robot is already moving, ignoring new command');
-            return;
+            await this.sleep(50);
         }
         
         try {
@@ -307,7 +289,7 @@ class RobotManager {
             await this.sendToBackend(angles);
             
             // Animate visual robot
-            await this.animateToPosition(angles, duration);
+            await this.animateToPosition(angles, duration, waitWhilePaused);
             
             // Update current state
             this.currentAngles = [...angles];
@@ -321,25 +303,15 @@ class RobotManager {
             this.isMoving = false;
         }
     }
-
-    async moveAlongPath(path, duration = 2000) {
-        if (!Array.isArray(path) || path.length === 0) return;
-        const stepDuration = duration / path.length;
-        for (const angles of path) {
-            this.setJointAngles(angles);
-            await this.sleep(stepDuration);
-        }
-        this.currentAngles = path[path.length - 1];
-    }
     
-    async animateToPosition(targetAngles, duration = 2000) {
+    async animateToPosition(targetAngles, duration = 2000, waitWhilePaused= null) {
         return new Promise((resolve) => {
             const startAngles = [...this.currentAngles];
             const steps = Math.max(30, Math.floor(duration / 50)); // At least 30 steps
             const stepDuration = duration / steps;
             let currentStep = 0;
             
-            const animateStep = () => {
+            const animateStep = async () => {
                 if (currentStep >= steps) {
                     // Ensure final position is exact
                     this.setJointAngles(targetAngles);
@@ -347,6 +319,8 @@ class RobotManager {
                     return;
                 }
                 
+                if (waitWhilePaused) await waitWhilePaused();
+
                 // Calculate interpolated angles with smooth easing
                 const progress = currentStep / steps;
                 const smoothProgress = this.easeInOutCubic(progress);
@@ -357,7 +331,9 @@ class RobotManager {
                 });
                 
                 this.setJointAngles(currentAngles);
-                
+
+                this.ui.updateJointDisplays(currentAngles);
+
                 currentStep++;
                 setTimeout(animateStep, stepDuration);
             };
@@ -486,28 +462,6 @@ class RobotManager {
             console.warn('⚠️ Backend reset failed:', error.message);
         }
     }
-    
-    // Utility Methods
-    async testMovement() {
-        console.log('🧪 Starting robot movement test');
-        
-        const testSequence = [
-            { position: [30, 0, 0, 0, 0, 0], duration: 1000 },
-            { position: [0, 30, 0, 0, 0, 0], duration: 1000 },
-            { position: [0, 0, 30, 0, 0, 0], duration: 1000 },
-            { position: [0, 0, 0, 45, 0, 0], duration: 1000 },
-            { position: [0, 0, 0, 0, 45, 0], duration: 1000 },
-            { position: [0, 0, 0, 0, 0, 90], duration: 1000 },
-            { position: this.positions.home, duration: 2000 }
-        ];
-        
-        for (const step of testSequence) {
-            await this.moveTo(step.position, step.duration);
-            await this.sleep(200); // Small pause between movements
-        }
-        
-        console.log('✅ Robot movement test completed');
-    }
 
     async getInterpolatedPath(targetAngles, steps = 20) {
         const response = await fetch(`${this.backendUrl}/interpolate?steps=${steps}`, {
@@ -528,13 +482,13 @@ class RobotManager {
             home: [0,0,0,0,0,0], // Default home position
             
             // Realistic ABB IRB6600 positions
-            leftBinApproach: [-45.0, 50.0, 55.0, 0.0, 0.0, 1.0],
-            leftBinPick: [-45.0,75.0,55.0,0.0,35.0,1.0],
-            leftBinLift: [-45.0,50.0,55.0,0.0,0.0,1.0],
+            leftBinApproach: [-45.0, 50.0, 55.0, 0.0, 0.0, 0.0],
+            leftBinPick: [-45.0,75.0,55.0,0.0,35.0,10.0],
+            leftBinLift: [-45.0,50.0,55.0,0.0,0.0,0.0],
 
-            rightBinApproach: [45.0,50.0,55.0,0.0,0.0,1.0],
-            rightBinDrop: [45.0,75.0,55.0,0.0,0.0,1.0],
-            rightBinLift: [45.0,50.0,55.0,0.0,0.0,1.0],
+            rightBinApproach: [45.0,50.0,55.0,0.0,0.0,0.0],
+            rightBinDrop: [45.0,75.0,55.0,0.0,35.0,-10.0],
+            rightBinLift: [45.0,50.0,55.0,0.0,0.0,0.0],
 
             // Safe intermediate positions
             intermediate1: [0.0, 30.0, 55.0, 0.0, 0.0, 0.0],
@@ -566,32 +520,6 @@ class RobotManager {
             return worldPosition;
         }
         return new THREE.Vector3(0, 0, 0);
-    }
-    
-    // Emergency stop
-    async emergencyStop() {
-        console.log('🚨 EMERGENCY STOP - Halting robot');
-        this.isMoving = false;
-        
-        try {
-            await fetch(`${this.backendUrl}${window.ENV.API_ENDPOINTS.EMERGENCY_STOP}`, {
-                method: 'POST'
-            });
-        } catch (error) {
-            console.warn('⚠️ Backend emergency stop failed:', error.message);
-        }
-    }
-    
-    // Add emergency stop method
-    emergencyStop() {
-        this.isEmergencyMode = true;
-        console.log("🚨 Robot EMERGENCY STOP activated");
-        
-        // Stop any ongoing movements
-        this.stopAllMovements();
-        
-        // Change robot color to indicate emergency
-        this.setEmergencyVisual(true);
     }
     
     resumeFromEmergency() {
