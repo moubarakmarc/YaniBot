@@ -83,10 +83,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.warn("⚠️ EmergencyManager not available - skipping emergency system");
                 app.emergency = null;
             }
-            
-            // Update UI manager with emergency reference
+
+            // Update UI manager and AutomationManager with emergency reference
             app.ui.emergencyManager = app.emergency;
-            
+            app.automation.emergencyManager = app.emergency;
+
             updateLoadingStatus("Connecting to backend...");
             
             // Initialize API (optional - can fail gracefully)

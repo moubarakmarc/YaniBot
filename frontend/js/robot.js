@@ -274,10 +274,10 @@ class RobotManager {
     }
     
     // Movement Methods
-    async moveTo(angles, duration = 2000) {
-        if (this.isMoving) {
+    async moveTo(angles, duration = 2000, waitWhilePaused = null) {
+        while (this.isMoving) {
             console.warn('Robot is already moving, ignoring new command');
-            return;
+            await this.sleep(50);
         }
         
         try {
@@ -288,7 +288,7 @@ class RobotManager {
             await this.sendToBackend(angles);
             
             // Animate visual robot
-            await this.animateToPosition(angles, duration);
+            await this.animateToPosition(angles, duration, waitWhilePaused);
             
             // Update current state
             this.currentAngles = [...angles];
@@ -302,25 +302,15 @@ class RobotManager {
             this.isMoving = false;
         }
     }
-
-    async moveAlongPath(path, duration = 2000) {
-        if (!Array.isArray(path) || path.length === 0) return;
-        const stepDuration = duration / path.length;
-        for (const angles of path) {
-            this.setJointAngles(angles);
-            await this.sleep(stepDuration);
-        }
-        this.currentAngles = path[path.length - 1];
-    }
     
-    async animateToPosition(targetAngles, duration = 2000) {
+    async animateToPosition(targetAngles, duration = 2000, waitWhilePaused= null) {
         return new Promise((resolve) => {
             const startAngles = [...this.currentAngles];
             const steps = Math.max(30, Math.floor(duration / 50)); // At least 30 steps
             const stepDuration = duration / steps;
             let currentStep = 0;
             
-            const animateStep = () => {
+            const animateStep = async () => {
                 if (currentStep >= steps) {
                     // Ensure final position is exact
                     this.setJointAngles(targetAngles);
@@ -328,6 +318,8 @@ class RobotManager {
                     return;
                 }
                 
+                if (waitWhilePaused) await waitWhilePaused();
+
                 // Calculate interpolated angles with smooth easing
                 const progress = currentStep / steps;
                 const smoothProgress = this.easeInOutCubic(progress);
@@ -525,32 +517,6 @@ class RobotManager {
             return worldPosition;
         }
         return new THREE.Vector3(0, 0, 0);
-    }
-    
-    // Emergency stop
-    async emergencyStop() {
-        console.log('🚨 EMERGENCY STOP - Halting robot');
-        this.isMoving = false;
-        
-        try {
-            await fetch(`${this.backendUrl}${window.ENV.API_ENDPOINTS.EMERGENCY_STOP}`, {
-                method: 'POST'
-            });
-        } catch (error) {
-            console.warn('⚠️ Backend emergency stop failed:', error.message);
-        }
-    }
-    
-    // Add emergency stop method
-    emergencyStop() {
-        this.isEmergencyMode = true;
-        console.log("🚨 Robot EMERGENCY STOP activated");
-        
-        // Stop any ongoing movements
-        this.stopAllMovements();
-        
-        // Change robot color to indicate emergency
-        this.setEmergencyVisual(true);
     }
     
     resumeFromEmergency() {

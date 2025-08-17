@@ -259,7 +259,6 @@ class EmergencyManager {
         }
     }
         
-    // Public methods
     getEmergencyStatus() {
         return this.isEmergencyMode;
     }
