@@ -467,28 +467,6 @@ class RobotManager {
             console.warn('⚠️ Backend reset failed:', error.message);
         }
     }
-    
-    // Utility Methods
-    async testMovement() {
-        console.log('🧪 Starting robot movement test');
-        
-        const testSequence = [
-            { position: [30, 0, 0, 0, 0, 0], duration: 1000 },
-            { position: [0, 30, 0, 0, 0, 0], duration: 1000 },
-            { position: [0, 0, 30, 0, 0, 0], duration: 1000 },
-            { position: [0, 0, 0, 45, 0, 0], duration: 1000 },
-            { position: [0, 0, 0, 0, 45, 0], duration: 1000 },
-            { position: [0, 0, 0, 0, 0, 90], duration: 1000 },
-            { position: this.positions.home, duration: 2000 }
-        ];
-        
-        for (const step of testSequence) {
-            await this.moveTo(step.position, step.duration);
-            await this.sleep(200); // Small pause between movements
-        }
-        
-        console.log('✅ Robot movement test completed');
-    }
 
     async getInterpolatedPath(targetAngles, steps = 20) {
         const response = await fetch(`${this.backendUrl}/interpolate?steps=${steps}`, {

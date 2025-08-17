@@ -37,8 +37,6 @@ class UIManager {
             jointValues: {},
             
             // Other controls
-            toggleAxesBtn: document.getElementById('toggleAxes'),
-            testMovementBtn: document.getElementById('testMovement'),
             emergencyStopBtn: document.getElementById('emergencyStop')
         };
         
@@ -59,8 +57,6 @@ class UIManager {
         this.elements.resetBtn?.addEventListener('click', () => this.handleResetRobot());
         
         // Utility control events
-        this.elements.toggleAxesBtn?.addEventListener('click', () => this.handleToggleAxes());
-        this.elements.testMovementBtn?.addEventListener('click', () => this.handleTestMovement());
         this.elements.emergencyStopBtn?.addEventListener('click', () => this.handleEmergencyStop());
         
         // Keyboard shortcuts
@@ -173,22 +169,6 @@ class UIManager {
                 const isVisible = this.robot.scene.axesVisible;
                 button.textContent = isVisible ? 'Hide Axes' : 'Show Axes';
             }
-        }
-    }
-    
-    async handleTestMovement() {
-        if (this.automation.isRunning) {
-            this.showStatus('Cannot test: Stop automation first', 'error');
-            return;
-        }
-        
-        try {
-            this.showStatus('Testing robot movement...', 'info');
-            await this.robot.testMovement();
-            this.showStatus('Movement test completed', 'success');
-        } catch (error) {
-            console.error('Movement test failed:', error);
-            this.showStatus(`Movement test failed: ${error.message}`, 'error');
         }
     }
     
@@ -383,9 +363,6 @@ class UIManager {
         // Toggle manual control buttons
         if (this.elements.resetBtn) {
             this.elements.resetBtn.disabled = !enabled;
-        }
-        if (this.elements.testMovementBtn) {
-            this.elements.testMovementBtn.disabled = !enabled;
         }
         
         // Update manual override section styling
