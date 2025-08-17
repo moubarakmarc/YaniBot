@@ -22,7 +22,7 @@
             <h3>Quick Actions</h3>
             <div class="action-buttons">
                 <button id="emergencyStop" class="btn-emergency">🚨 Emergency Stop</button>
-                <button id="resumeEmergency" class="btn-resume">🔄 Resume Robot</button>
+                <button id="resumeEmergency" class="btn-resume" style="display: none;">🔄 Resume Robot</button>
             </div>
         </div>
 
@@ -185,29 +185,6 @@
                 <div class="stat-item">
                     <span class="stat-label">DOF:</span>
                     <span class="stat-value">6-Axis</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Keyboard Shortcuts Info -->
-        <div id="keyboard-shortcuts" class="collapsible">
-            <h4 onclick="toggleSection('shortcuts-content')">⌨️ Keyboard Shortcuts</h4>
-            <div id="shortcuts-content" class="shortcuts-content" style="display: none;">
-                <div class="shortcut-item">
-                    <span class="shortcut-key">Ctrl+S</span>
-                    <span>Start/Stop Automation</span>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-key">Ctrl+P</span>
-                    <span>Pause/Resume</span>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-key">Ctrl+R</span>
-                    <span>Reset Robot</span>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-key">Escape</span>
-                    <span>Emergency Stop</span>
                 </div>
             </div>
         </div>

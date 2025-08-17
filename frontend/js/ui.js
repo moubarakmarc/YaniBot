@@ -13,7 +13,6 @@ class UIManager {
         this.bindEvents();
         this.updateDisplay();
         this.initJointSliders();
-        this.toggleEmergencyResumeButtons(false); // Emergency not active at start
         console.log("✅ UI Manager initialized");
     }
     
@@ -37,7 +36,7 @@ class UIManager {
             jointValues: {},
             
             // Other controls
-            emergencyStopBtn: document.getElementById('emergencyStop')
+            emergencyStopBtn: document.getElementById('emergencyStop'),
         };
         
         // Cache joint sliders and value displays
@@ -57,17 +56,14 @@ class UIManager {
         this.elements.resetBtn?.addEventListener('click', () => this.handleResetRobot());
         
         // Utility control events
-        this.elements.emergencyStopBtn?.addEventListener('click', () => this.handleEmergencyStop());
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        this.elements.emergencyStopBtn?.addEventListener('click', () => this.emergencyManager?.activateEmergencyMode());
         
         // Window events
         window.addEventListener('beforeunload', () => this.handlePageUnload());
         
         const resumeBtn = document.getElementById('resumeEmergency');
         if (resumeBtn) {
-            resumeBtn.addEventListener('click', () => this.handleResumeEmergency());
+            resumeBtn.addEventListener('click', () => this.emergencyManager?.deactivateEmergencyMode());
         }
         
         console.log("🔗 UI Events bound");
@@ -172,26 +168,6 @@ class UIManager {
         }
     }
     
-    async handleEmergencyStop() {
-        try {
-            this.showStatus('EMERGENCY STOP ACTIVATED', 'error');
-            await this.automation.emergencyStop();
-            this.updateAutomationButtons(false);
-            this.toggleManualControls(true);
-
-            // Toggle buttons
-            this.toggleEmergencyResumeButtons(true);
-
-            // Visual indication
-            document.body.style.backgroundColor = '#ffebee';
-            setTimeout(() => {
-                document.body.style.backgroundColor = '';
-            }, 2000);
-        } catch (error) {
-            console.error('Emergency stop failed:', error);
-        }
-    }
-    
     handleJointSliderChange(jointIndex, angle, valueDisplay) {
         if (this.automation.isRunning) {
             return; // Don't allow manual control during automation
@@ -239,39 +215,6 @@ class UIManager {
             }
         } catch (error) {
             console.error('Failed to update backend:', error);
-        }
-    }
-    
-    handleKeyboard(event) {
-        // Keyboard shortcuts
-        if (event.ctrlKey || event.metaKey) {
-            switch (event.key.toLowerCase()) {
-                case 's':
-                    event.preventDefault();
-                    if (this.automation.isRunning) {
-                        this.handleStopAutomation();
-                    } else {
-                        this.handleStartAutomation();
-                    }
-                    break;
-                case 'p':
-                    event.preventDefault();
-                    this.handlePauseAutomation();
-                    break;
-                case 'r':
-                    event.preventDefault();
-                    this.handleResetRobot();
-                    break;
-                case 'e':
-                    event.preventDefault();
-                    this.handleEmergencyStop();
-                    break;
-            }
-        }
-        
-        // Escape key for emergency stop
-        if (event.key === 'Escape') {
-            this.handleEmergencyStop();
         }
     }
     
@@ -461,60 +404,7 @@ class UIManager {
             this.elements.rightBinCount.textContent = rightCount;
         }
     }
-    
-    // Add this method to expose emergency stop functionality
-    triggerEmergencyStop(reason = "External trigger") {
-        console.log(`🚨 Emergency stop triggered: ${reason}`);
-        
-        // Use your existing emergency stop button functionality
-        const emergencyBtn = document.getElementById('emergencyStop'); // <-- FIXED ID
-        if (emergencyBtn) {
-            emergencyBtn.click();
-            // Or call the emergency stop function directly if you have it
-            // this.handleEmergencyStop();
-        }
-        
-        // Update UI to show reason
-        this.showEmergencyReason(reason);
-    }
-    
-    showEmergencyReason(reason) {
-        // Update emergency stop button text or add reason display
-        const emergencyBtn = document.getElementById('emergencyStop'); // <-- FIXED ID
-        if (emergencyBtn) {
-            const originalText = emergencyBtn.textContent;
-            emergencyBtn.textContent = `🚨 EMERGENCY: ${reason}`;
-            
-            // Restore original text after 3 seconds
-            setTimeout(() => {
-                emergencyBtn.textContent = originalText;
-            }, 3000);
-        }
-    }
-    
-    toggleEmergencyResumeButtons(isEmergency) {
-        const emergencyBtn = this.elements.emergencyStopBtn;
-        const resumeBtn = document.getElementById('resumeEmergency');
-        if (isEmergency) {
-            if (emergencyBtn) emergencyBtn.disabled = true;
-            if (resumeBtn) resumeBtn.disabled = false;
-            if (emergencyBtn) emergencyBtn.style.display = 'none';
-            if (resumeBtn) resumeBtn.style.display = '';
-        } else {
-            if (emergencyBtn) emergencyBtn.disabled = false;
-            if (resumeBtn) resumeBtn.disabled = true;
-            if (emergencyBtn) emergencyBtn.style.display = '';
-            if (resumeBtn) resumeBtn.style.display = 'none';
-        }
-    }
-    
-    handleResumeEmergency() {
-        if (this.emergencyManager && this.emergencyManager.forceEmergencyResume) {
-            this.emergencyManager.forceEmergencyResume();
-        }
-        this.toggleEmergencyResumeButtons(false);
-        this.showStatus('Emergency cleared. Manual control enabled.', 'success');
-    }
+
 }
 
 // Make class globally available
