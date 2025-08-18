@@ -12,7 +12,7 @@ class UIManager {
     init() {
         this.cacheElements();
         this.bindEvents();
-        this.initJointSliders();
+        this.initJointArrows();
         console.log("✅ UI Manager initialized");
     }
     
@@ -93,10 +93,39 @@ class UIManager {
             }
         });
 
+        // Joint controls
+        document.querySelectorAll('.joint-arrow').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const joint = parseInt(btn.dataset.joint);
+                const dir = parseInt(btn.dataset.dir);
+                const input = document.getElementById(`a${joint+1}-input`);
+                const min = parseInt(input.min);
+                const max = parseInt(input.max);
+                let value = parseInt(input.value) + dir;
+                value = Math.max(min, Math.min(max, value));
+                input.value = value;
+                // Call your handler to move the joint
+                this.handleJointSliderChange(joint, value, input);
+                this.handleJointSliderFinalChange(joint, value);
+            });
+        });
+        document.querySelectorAll('.joint-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const joint = parseInt(input.id.match(/\d+/)[0]) - 1;
+                let value = parseInt(input.value);
+                const min = parseInt(input.min);
+                const max = parseInt(input.max);
+                value = Math.max(min, Math.min(max, value));
+                input.value = value;
+                this.handleJointSliderChange(joint, value, input);
+                this.handleJointSliderFinalChange(joint, value);
+            });
+        });
+
         console.log("🔗 UI Events bound");
     }
     
-    initJointSliders() {
+    initJointArrows() {
         const joints = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
         
         joints.forEach((joint, index) => {
@@ -105,11 +134,11 @@ class UIManager {
             
             if (slider && valueDisplay) {
                 slider.addEventListener('input', (e) => {
-                    this.handleJointSliderChange(index, parseFloat(e.target.value), valueDisplay);
+                    this.handleJointArrowChange(index, parseFloat(e.target.value), valueDisplay);
                 });
                 
                 slider.addEventListener('change', (e) => {
-                    this.handleJointSliderFinalChange(index, parseFloat(e.target.value));
+                    this.handleJointArrowFinalChange(index, parseFloat(e.target.value));
                 });
             }
         });
@@ -210,7 +239,7 @@ class UIManager {
         }
     }
 
-    async handleJointSliderChange(jointIndex, angle, valueDisplay) {
+    async handleJointArrowChange(jointIndex, angle, valueDisplay) {
         let state = await this.api.getState();
 
         if (state.isEmergencyMode) {
@@ -234,8 +263,8 @@ class UIManager {
             this.sendJointAngleToBackend(jointIndex, angle);
         }, 150); // 1000ms debounce
     }
-    
-    async handleJointSliderFinalChange(jointIndex, angle) {
+
+    async handleJointArrowFinalChange(jointIndex, angle) {
         // Final change - send immediately to backend
         let state = await this.api.getState();
         if (!state.isMoving) {
