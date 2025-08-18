@@ -25,7 +25,8 @@ class UIManager {
             stopBtn: document.getElementById('stopAutomation'),
             pauseBtn: document.getElementById('pauseAutomation'),
             resumeBtn: document.getElementById('resumeAutomation'),
-            
+            strategySelect: document.getElementById('automation-strategy'),
+
             // Status displays
             leftBinCount: document.getElementById('left-bin-count'),
             rightBinCount: document.getElementById('right-bin-count'),
@@ -90,12 +91,10 @@ class UIManager {
         }
 
         // Strategy selection event
-        const strategySelect = document.getElementById('automation-strategy');
-        if (strategySelect) {
-            strategySelect.addEventListener('change', (e) => {
-                this.automation.strategy = e.target.value;
-            });
-        }
+        this.elements.strategySelect?.addEventListener('change', (e) => {
+            this.automation.strategy = e.target.value;
+            console.log(`Automation strategy set to: ${this.automation.strategy}`);
+        });
 
         // Log controls
         this.elements.logDropdownBtn?.addEventListener('click', (e) => {
