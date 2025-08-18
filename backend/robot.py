@@ -16,3 +16,4 @@ class RobotArm:
         self.isEmergencyMode = False
         self.isPaused = False
         self.isMoving = False
+        self.isStopped = False

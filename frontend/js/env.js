@@ -21,6 +21,7 @@ window.ENV = {
         HEALTH: '/health',
         MOVING: '/moving',
         PAUSE: '/pause',
+        STOP: '/stop',
         INTERPOLATE: '/interpolate',
         LIMITS: '/limits',
         EMERGENCY: '/emergency',

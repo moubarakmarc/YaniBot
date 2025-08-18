@@ -54,6 +54,9 @@ class EmergencyStateRequest(BaseModel):
 class PauseRequest(BaseModel):
     is_paused: bool
 
+class StopRequest(BaseModel):
+    is_stopped: bool
+
 @app.get("/")
 def root():
     """
@@ -121,6 +124,7 @@ def get_state():
         "isMoving": robot.isMoving,
         "isEmergency": robot.isEmergencyMode,
         "isPaused": robot.isPaused,
+        "isStopped": robot.isStopped,
     }
 
 @app.post("/reset")
@@ -216,6 +220,24 @@ def interpolate_path_to_move(request: InterpolateRequest, steps: int = 20):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/stop")
+def set_stop_state(request: StopRequest):
+    """
+    Stop the robot's movement.
+    This endpoint is used to stop the robot's current movement.
+
+    Returns:
+        dict: A dictionary containing the success status and a message.
+    
+    Raises:
+        HTTPException: If the stop operation fails.
+    """
+    try:
+        robot.isStopped = request.is_stopped
+        return {"success": True, "message": "Robot movement stopped"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/pause")
 def set_pause_state(request: PauseRequest):

@@ -26,14 +26,12 @@ class AutomationManager {
         await this.api.setMovingState(true);
         this.startEmergencyMonitor();
         this.cycleCount = 0;
-        console.log('line 29 ok');
         this.automationLoop();
     }
 
     async stop() {
-        this.api.setMovingState(false);
+        await this.api.setStopState(true);
         if (this.automationInterval) clearTimeout(this.automationInterval);
-        //await this.robot.moveTo(this.robot.positions.home, 2000);
         this.currentAction = 'Stopped';
         this.stopEmergencyMonitor();
         console.log('✅ Automation stopped');
@@ -42,16 +40,18 @@ class AutomationManager {
     async automationLoop() {
         let state = await this.api.getState();
         console.log(state.isMoving);
-        while (state.isMoving) {
+        while (state.isMoving && !state.isStopped) {
             try {
                 const shouldContinue = await this.performCycle();
                 if (!shouldContinue) break; // Stop loop if bins are empty
                 await this.sleep(this.cycleDelay);
+                state = await this.api.getState(); // Update state
             } catch (error) {
                 console.error('Automation error:', error);
                 this.api.setMovingState(false);
                 break;
             }
+            console.log(state);
         }
     }
 

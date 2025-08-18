@@ -12,7 +12,6 @@ class UIManager {
     init() {
         this.cacheElements();
         this.bindEvents();
-        this.updateDisplay();
         this.initJointSliders();
         console.log("✅ UI Manager initialized");
     }
@@ -26,7 +25,6 @@ class UIManager {
             stopBtn: document.getElementById('stopAutomation'),
             pauseBtn: document.getElementById('pauseAutomation'),
             resumeBtn: document.getElementById('resumeAutomation'),
-            resetBtn: document.getElementById('resetJoints'),
             
             // Status displays
             leftBinCount: document.getElementById('left-bin-count'),
@@ -36,6 +34,7 @@ class UIManager {
             currentAction: document.getElementById('current-action'),
             
             // Joint controls
+            manualJointControl: document.getElementById('manual-override'),
             jointSliders: {},
             jointValues: {},
             
@@ -131,14 +130,13 @@ class UIManager {
         try {
             this.showStatus('Starting automation...', 'info');
             await this.automation.start();
-            this.updateAutomationButtons(true);
-            this.toggleOverrideControls(false);
+            this.updateAutomationButtons();
+            this.toggleOverrideControls();
             this.showStatus('Automation Starting...', 'success');
-            this.updateDisplay();
         } catch (error) {
             console.error('Failed to start automation:', error);
             this.showStatus(`Failed to start: ${error.message}`, 'error');
-            this.updateAutomationButtons(false);
+            this.updateAutomationButtons();
         }
     }
     
@@ -146,10 +144,9 @@ class UIManager {
         try {
             this.showStatus('Stopping automation...', 'info');
             await this.automation.stop();
-            this.updateAutomationButtons(false);
-            this.toggleOverrideControls(true);
+            this.updateAutomationButtons();
+            this.toggleOverrideControls();
             this.showStatus('Automation stopped', 'warning');
-            this.updateDisplay();
         } catch (error) {
             console.error('Failed to stop automation:', error);
             this.showStatus(`Failed to stop: ${error.message}`, 'error');
@@ -158,8 +155,7 @@ class UIManager {
     
     async handlePauseAutomation() {
         try {
-            const wasPaused = this.automation.isPausedUser;
-            await this.automation.togglePause();
+            await this.api.setPauseState(true);
             this.updatePauseResumeButtons();
             this.showStatus('Automation paused', 'success');
             
@@ -171,11 +167,7 @@ class UIManager {
 
     async handleResumeAutomation() {
         try {
-            if (!this.automation.isPausedUser) {
-                this.showStatus('Automation is not paused', 'info');
-                return;
-            }
-            await this.automation.togglePause();
+            await this.api.setPauseState(false);
             this.updatePauseResumeButtons();
             this.showStatus('Automation resumed', 'success');
         } catch (error) {
@@ -259,14 +251,6 @@ class UIManager {
         }
     }
     
-    // UI Update Methods
-    updateDisplay() {
-        this.updateBinCounts();
-        this.updateCycleCount();
-        this.updateAutomationStatus();
-        this.updateAutomationButtons(this.automation.isRunning);
-    }
-    
     updateBinCounts() {
         if (this.automation.binManager) {
             const counts = this.automation.binManager.getBinCounts();
@@ -301,18 +285,7 @@ class UIManager {
             this.elements.currentAction.textContent = action;
         }
     }
-    
-    updateAutomationButtons(isRunning) {
-        if (this.elements.startBtn) {
-            this.elements.startBtn.disabled = isRunning;
-        }
-        if (this.elements.stopBtn) {
-            this.elements.stopBtn.disabled = !isRunning;
-        }
-        if (this.elements.pauseBtn) {
-            this.elements.pauseBtn.disabled = !isRunning;
-        }
-    }
+
     
     updateJointDisplays(angles) {
         for (let i = 0; i < angles.length && i < 6; i++) {
@@ -327,19 +300,22 @@ class UIManager {
             }
         }
     }
-    toggleOverrideControls(enabled) {
-        const manualSection = document.getElementById('manual-override');
-        if (manualSection) {
-            if (enabled) {
-                manualSection.classList.remove('disabled');
-            } else {
-                manualSection.classList.add('disabled');
-            }
-        }
+
+    async updateAutomationButtons() {
+        let state = await this.api.getState();
+        this.elements.startBtn.disabled = state.isMoving;
+        this.elements.stopBtn.disabled = !state.isMoving;
+        this.updatePauseResumeButtons();
     }
 
-    updatePauseResumeButtons() {
-        if (this.automation.isPausedUser) {
+    async toggleOverrideControls() {
+        let state = await this.api.getState();
+        this.elements.manualJointControl.disabled = state.isMoving;
+    }
+
+    async updatePauseResumeButtons() {
+        let state = await this.api.getState();
+        if (state.isPaused) {
             // Show Resume, hide Pause
             this.elements.pauseBtn.style.display = 'none';
             this.elements.resumeBtn.style.display = '';
@@ -351,6 +327,7 @@ class UIManager {
             this.elements.pauseBtn.disabled = false;
         }
     }
+
     
     showStatus(message, type = 'info') {
         console.log(`${type.toUpperCase()}: ${message}`);

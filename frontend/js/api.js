@@ -93,6 +93,40 @@ class APIManager {
         }
     }
 
+    async setStopState(isStopped) {
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.STOP}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_stopped: isStopped })
+            });
+            const data = await response.json();
+            console.log('setStopState response:', data);
+            if (!response.ok) throw new Error('Failed to set stop state');
+            return data;
+        } catch (error) {
+            console.warn('⚠️ Failed to set stop state:', error.message);
+            return null;
+        }
+    }
+
+    async setPauseState(isPaused) {
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.PAUSE}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_paused: isPaused })
+            });
+            const data = await response.json();
+            console.log('setPauseState response:', data);
+            if (!response.ok) throw new Error('Failed to set pause state');
+            return data;
+        } catch (error) {
+            console.warn('⚠️ Failed to set pause state:', error.message);
+            return null;
+        }
+    }
+
     async setEmergencyState(isEmergency) {
         try {
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.EMERGENCY}`, {
