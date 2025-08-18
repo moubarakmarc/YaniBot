@@ -1,6 +1,18 @@
 let app = {};
 let robot; // Make robot accessible
 
+// Initialize global app object
+window.LOG_OPTIONS = {
+    state: true,
+    reset: true,
+    interpolatedPath: true,
+    jointLimits: true,
+    movingState: true,
+    stopState: true,
+    pauseState: true,
+    emergencyState: true
+};
+
 // Update loading status if available
 function updateLoadingStatus(message) {
     console.log(`📝 ${message}`);
@@ -171,6 +183,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Start initialization
     initYaniBot();
+    
+    // === Log Options Checkbox Sync ===
+    [
+        'state', 'reset', 'interpolatedPath', 'jointLimits',
+        'movingState', 'stopState', 'pauseState', 'emergencyState'
+    ].forEach(key => {
+        const checkbox = document.getElementById('log' + key.charAt(0).toUpperCase() + key.slice(1));
+        if (checkbox) {
+            checkbox.onchange = function(e) {
+                window.LOG_OPTIONS[key] = e.target.checked;
+            };
+        }
+    });
 
 });
 

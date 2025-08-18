@@ -56,7 +56,6 @@ class AutomationManager {
                 this.api.setMovingState(false);
                 break;
             }
-            console.log(state);
         }
     }
 

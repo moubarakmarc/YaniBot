@@ -22,7 +22,7 @@ class APIManager {
         try {
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.STATE}`);
             const data = await response.json();
-            console.log('getState response:', data);
+            if (window.LOG_OPTIONS.state) console.log('getState response:', data);
             if (!response.ok) throw new Error(`Backend error: ${response.status}`);
             return data;
         } catch (error) {
@@ -37,7 +37,7 @@ class APIManager {
                 method: 'POST'
             });
             const data = await response.json();
-            console.log('reset response:', data);
+            if (window.LOG_OPTIONS.reset) console.log('reset response:', data);
             if (response.ok) return data;
         } catch (error) {
             console.warn('⚠️ Backend reset failed:', error.message);
@@ -54,7 +54,7 @@ class APIManager {
             body: JSON.stringify(payload)
         });
         const data = await response.json();
-        console.log('getInterpolatedPath response:', data);
+        if (window.LOG_OPTIONS.interpolatedPath) console.log('getInterpolatedPath response:', data);
         if (!response.ok) throw new Error('Failed to fetch interpolated path');
         return data.steps;
     }
@@ -67,7 +67,7 @@ class APIManager {
                 body: JSON.stringify({ joint_angles: angles })
             });
             const data = await response.json();
-            console.log('check_joint_limits response:', data);
+            if (window.LOG_OPTIONS.jointLimits) console.log('check_joint_limits response:', data);
             if (!response.ok) throw new Error('Failed to check joint limits');
             return data;
         } catch (error) {
@@ -84,7 +84,7 @@ class APIManager {
                 body: JSON.stringify({ is_moving: isMoving })
             });
             const data = await response.json();
-            console.log('setMovingState response:', data);
+            if (window.LOG_OPTIONS.movingState) console.log('setMovingState response:', data);
             if (!response.ok) throw new Error('Failed to set moving state');
             return data;
         } catch (error) {
@@ -101,7 +101,7 @@ class APIManager {
                 body: JSON.stringify({ is_stopped: isStopped })
             });
             const data = await response.json();
-            console.log('setStopState response:', data);
+            if (window.LOG_OPTIONS.stopState) console.log('setStopState response:', data);
             if (!response.ok) throw new Error('Failed to set stop state');
             return data;
         } catch (error) {
@@ -118,7 +118,7 @@ class APIManager {
                 body: JSON.stringify({ is_paused: isPaused })
             });
             const data = await response.json();
-            console.log('setPauseState response:', data);
+            if (window.LOG_OPTIONS.pauseState) console.log('setPauseState response:', data);
             if (!response.ok) throw new Error('Failed to set pause state');
             return data;
         } catch (error) {
@@ -135,7 +135,7 @@ class APIManager {
                 body: JSON.stringify({ is_emergency: isEmergency })
             });
             const data = await response.json();
-            console.log('setEmergencyState response:', data);
+            if (window.LOG_OPTIONS.emergencyState) console.log('setEmergencyState response:', data);
             if (!response.ok) throw new Error('Failed to set emergency state');
             return data;
         } catch (error) {
