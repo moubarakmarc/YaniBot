@@ -122,7 +122,7 @@ def get_state():
     """
     return {
         "isMoving": robot.isMoving,
-        "isEmergency": robot.isEmergencyMode,
+        "isEmergencyMode": robot.isEmergencyMode,
         "isPaused": robot.isPaused,
         "isStopped": robot.isStopped,
     }
@@ -273,7 +273,7 @@ def set_emergency_state(request: EmergencyStateRequest):
         HTTPException: If the request is invalid or if an error occurs.
     """
     robot.isEmergencyMode = request.is_emergency
-    return {"success": True, "is_emergency": robot.isEmergencyMode}
+    return {"success": True, "isEmergencyMode": robot.isEmergencyMode}
 
 # For development server
 if __name__ == "__main__":

@@ -94,13 +94,9 @@ class RobotManager {
             this.updateJointRotation(i, angles[i]);
         }
     }
-    
-    updateJointRotation(jointIndex, angle) {
-        if (this.isEmergencyMode) {
-            console.warn("🚨 Movement blocked - Robot in emergency mode");
-            return false;
-        }
-        
+
+    async updateJointRotation(jointIndex, angle) {
+
         if (!this.joints[jointIndex]) {
             console.warn(`Joint ${jointIndex} not found`);
             return;
@@ -110,9 +106,12 @@ class RobotManager {
         const radians = (angle * Math.PI) / 180;
         const axis = joint.userData.axis;
         
-        // Reset rotation
-        joint.rotation.set(0, 0, 0);
+        // // Reset rotation
+        // joint.rotation.set(0, 0, 0);
         
+        await this.waitWhilePaused();
+        
+
         // Apply rotation based on axis
         switch (axis) {
             case 'x': // Roll rotation
@@ -164,12 +163,13 @@ class RobotManager {
         while (state.isEmergencyMode || state.isPaused) {
             if (state.isEmergencyMode) {
                 console.warn('⏸️ Waiting for emergency mode to clear...');
-            } else {
+            } else if (state.isPaused) {
                 console.warn('⏸️ Waiting for user pause to end...');
             }
             await this.sleep(100); // Check every 100ms
             state = await this.api.getState();
         }
+        
     }
 
     sleep(ms) {

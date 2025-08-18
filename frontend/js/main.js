@@ -109,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 app.robot.api = app.api; // Pass API to robot manager
                 app.automation.api = app.api; // Pass API to automation manager
                 app.ui.api = app.api; // Pass API to UI manager
+                app.emergency.api = app.api; // Pass API to emergency manager if available
                 
                 // Initialize API manager
                 await app.api.init();

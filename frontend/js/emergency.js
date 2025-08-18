@@ -9,9 +9,8 @@ class EmergencyManager {
         this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
-        
         this.EMERGENCY_RADIUS = 3.0; // 3 meters - same as red circle
-        
+        this.api = null;
         this.init();
     }
     
