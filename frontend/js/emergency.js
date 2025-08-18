@@ -4,16 +4,13 @@ class EmergencyManager {
         this.robotManager = robotManager;
         this.camera = sceneManager.camera;
         this.renderer = sceneManager.renderer;
-        
-        this.isEmergencyMode = false;
         this.movableObject = null;
         this.isDragging = false;
         this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
-        
         this.EMERGENCY_RADIUS = 3.0; // 3 meters - same as red circle
-        
+        this.api = null;
         this.init();
     }
     
@@ -58,11 +55,6 @@ class EmergencyManager {
         this.renderer.domElement.addEventListener('mousedown', (event) => this.onMouseDown(event));
         this.renderer.domElement.addEventListener('mousemove', (event) => this.onMouseMove(event));
         this.renderer.domElement.addEventListener('mouseup', (event) => this.onMouseUp(event));
-        
-        // Touch events for mobile
-        this.renderer.domElement.addEventListener('touchstart', (event) => this.onTouchStart(event));
-        this.renderer.domElement.addEventListener('touchmove', (event) => this.onTouchMove(event));
-        this.renderer.domElement.addEventListener('touchend', (event) => this.onTouchEnd(event));
     }
     
     updateMousePosition(event) {
@@ -128,41 +120,20 @@ class EmergencyManager {
         }
     }
     
-    // Touch events (for mobile support)
-    onTouchStart(event) {
-        if (event.touches.length === 1) {
-            event.preventDefault();
-            const touch = event.touches[0];
-            this.onMouseDown({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => {} });
-        }
-    }
-    
-    onTouchMove(event) {
-        if (event.touches.length === 1) {
-            event.preventDefault();
-            const touch = event.touches[0];
-            this.onMouseMove({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => {} });
-        }
-    }
-    
-    onTouchEnd(event) {
-        event.preventDefault();
-        this.onMouseUp({ preventDefault: () => {} });
-    }
-    
-    checkEmergencyZone() {
+    async checkEmergencyZone() {
         // Calculate distance from robot base (0,0,0)
         const distance = Math.sqrt(
             this.movableObject.position.x ** 2 + 
             this.movableObject.position.z ** 2
         );
         
-        const wasInEmergency = this.isEmergencyMode;
-        this.isEmergencyMode = distance <= this.EMERGENCY_RADIUS;
-        
+        let state = await this.api.getState();
+        const prevEmergencyState = state.isEmergencyMode;
+        const currEmergencyState = distance <= this.EMERGENCY_RADIUS;
+
         // Emergency state changed
-        if (this.isEmergencyMode !== wasInEmergency) {
-            if (this.isEmergencyMode) {
+        if (currEmergencyState !== prevEmergencyState) {
+            if (currEmergencyState) {
                 this.activateEmergencyMode();
             } else {
                 this.deactivateEmergencyMode();
@@ -175,16 +146,16 @@ class EmergencyManager {
         
         // Change square color to red
         this.movableObject.material.color.setHex(0xFF0000);
-
-        this.isEmergencyMode = true;
+        
+        this.api.setEmergencyState(true)
         
         // Show emergency UI
         this.showEmergencyUI();
 
-        this.toggleEmergencyResumeButtons(true);
+        this.toggleEmergencyResumeButtons();
     }
     
-    deactivateEmergencyMode() {
+    async deactivateEmergencyMode() {
         console.log("✅ EMERGENCY MODE DEACTIVATED");
         
         // Change square color back to gold
@@ -194,11 +165,12 @@ class EmergencyManager {
         this.hideEmergencyUI();
         
         // Auto-resume robot movement
-        if (this.isEmergencyMode) {
-            this.isEmergencyMode = false;
+        let state = await this.api.getState();
+        if (state.isEmergencyMode) {
+            this.api.setEmergencyState(false);
         }
 
-        this.toggleEmergencyResumeButtons(false); 
+        this.toggleEmergencyResumeButtons(); 
     }
     
     showEmergencyUI() {
@@ -245,22 +217,19 @@ class EmergencyManager {
         }
     }
 
-    toggleEmergencyResumeButtons(isEmergency) {
+    async toggleEmergencyResumeButtons() {
         const emergencyBtn = document.getElementById('emergencyStop');
         const resumeEbtn = document.getElementById('resumeEmergency');
         if (!emergencyBtn || !resumeEbtn) return;
 
-        if (isEmergency) {
+        let state = await this.api.getState();
+        if (state.isEmergencyMode) {
             emergencyBtn.style.display = 'none';
             resumeEbtn.style.display = '';
         } else {
             emergencyBtn.style.display = '';
             resumeEbtn.style.display = 'none';
         }
-    }
-        
-    getEmergencyStatus() {
-        return this.isEmergencyMode;
     }
 }
 
