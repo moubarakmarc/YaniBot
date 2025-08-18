@@ -204,8 +204,8 @@ class UIManager {
         
         try {
             this.showStatus('Resetting robot...', 'info');
-            await this.api.reset();
-            this.updateJointDisplays([0.0, 30.0, 55.0, 0.0, 0.0, 0.0]);
+            let target_angles = await this.api.reset();
+            await this.robot.moveTo(this.robot.currentAngles, target_angles, 1000);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);
@@ -361,8 +361,6 @@ class UIManager {
         }
     }
 
-
-    
     showStatus(message, type = 'info') {
         console.log(`${type.toUpperCase()}: ${message}`);
         

@@ -24,7 +24,6 @@ class AutomationManager {
         // disable start automation after first click
         if (this.binManager.isEmpty()) throw new Error('No objects to move - reset the scene first');
         await this.api.setMovingState(true);
-        this.startEmergencyMonitor();
         this.cycleCount = 0;
         this.automationLoopPromise = this.automationLoop();
     }

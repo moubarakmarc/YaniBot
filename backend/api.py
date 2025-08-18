@@ -140,11 +140,11 @@ def reset_robot():
     """
     try:
         home_position = [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]
-        path = robot.move_to(home_position)
         return {
             "success": True,
             "message": "Robot reset to home position",
-            "current_angles": robot.current_angles
+            "current_angles": robot.current_angles,
+            "target_angles": home_position
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
