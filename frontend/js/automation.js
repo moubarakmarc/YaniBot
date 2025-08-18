@@ -26,12 +26,17 @@ class AutomationManager {
         await this.api.setMovingState(true);
         this.startEmergencyMonitor();
         this.cycleCount = 0;
-        this.automationLoop();
+        this.automationLoopPromise = this.automationLoop();
     }
 
     async stop() {
         await this.api.setStopState(true);
+        if (this.automationLoopPromise) {
+            await this.automationLoopPromise;
+            this.automationLoopPromise = null;
+        }        
         if (this.automationInterval) clearTimeout(this.automationInterval);
+        this.api.setMovingState(false);
         this.currentAction = 'Stopped';
         this.stopEmergencyMonitor();
         console.log('✅ Automation stopped');

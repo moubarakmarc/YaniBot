@@ -320,11 +320,17 @@ class UIManager {
             this.elements.pauseBtn.style.display = 'none';
             this.elements.resumeBtn.style.display = '';
             this.elements.resumeBtn.disabled = false;
-        } else {
+        } else if (!state.isPaused && state.isMoving) {
             // Show Pause, hide Resume
             this.elements.pauseBtn.style.display = '';
             this.elements.resumeBtn.style.display = 'none';
             this.elements.pauseBtn.disabled = false;
+        } else if (!state.isMoving) {
+            // Show Disabled Pause and hide Resume
+            this.elements.pauseBtn.style.display = '';
+            this.elements.resumeBtn.style.display = 'none';
+            this.elements.pauseBtn.disabled = true;
+            this.elements.resumeBtn.disabled = true;
         }
     }
 
