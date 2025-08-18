@@ -200,13 +200,14 @@ class UIManager {
             this.showStatus(`Failed to reset: ${error.message}`, 'error');
         }
     }
-    
-    handleJointSliderChange(jointIndex, angle, valueDisplay) {
+
+    async handleJointSliderChange(jointIndex, angle, valueDisplay) {
+        let state = await this.api.getState();
         if (this.automation.isRunning) {
             return; // Don't allow manual control during automation
         }
-        
-        if (this.emergencyManager && this.emergencyManager.getEmergencyStatus && this.emergencyManager.getEmergencyStatus()) {
+
+        if (state.isEmergencyMode) {
             this.showStatus('Robot is in emergency stop! Clear emergency before moving joints.', 'error');
             return;
         }

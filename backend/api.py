@@ -22,7 +22,7 @@ app.add_middleware(
 )
 
 # Initialize the robot arm
-robot = RobotArm()
+robot = RobotArm(isEmergencyMode=False, isPaused=False, isMoving=False)
 
 def interpolate_path(start_angles, target_angles, steps=20):
     """
@@ -145,7 +145,7 @@ def reset_robot():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/limits")
+@app.post("/limits")
 def check_joint_limits(request: JointLimitsResponse):
     """
     Check if the provided joint angles are within the robot's limits.

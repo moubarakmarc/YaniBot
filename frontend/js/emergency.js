@@ -4,8 +4,6 @@ class EmergencyManager {
         this.robotManager = robotManager;
         this.camera = sceneManager.camera;
         this.renderer = sceneManager.renderer;
-        
-        this.isEmergencyMode = false;
         this.movableObject = null;
         this.isDragging = false;
         this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -151,15 +149,13 @@ class EmergencyManager {
         
         this.api.setEmergencyState(true)
         
-        this.isEmergencyMode = true;
-        
         // Show emergency UI
         this.showEmergencyUI();
 
-        this.toggleEmergencyResumeButtons(true);
+        this.toggleEmergencyResumeButtons();
     }
     
-    deactivateEmergencyMode() {
+    async deactivateEmergencyMode() {
         console.log("✅ EMERGENCY MODE DEACTIVATED");
         
         // Change square color back to gold
@@ -169,12 +165,12 @@ class EmergencyManager {
         this.hideEmergencyUI();
         
         // Auto-resume robot movement
-        if (this.isEmergencyMode) {
-            this.isEmergencyMode = false;
-            this.api.setEmergencyState(false)
+        let state = await this.api.getState();
+        if (state.isEmergencyMode) {
+            this.api.setEmergencyState(false);
         }
 
-        this.toggleEmergencyResumeButtons(false); 
+        this.toggleEmergencyResumeButtons(); 
     }
     
     showEmergencyUI() {
@@ -221,22 +217,19 @@ class EmergencyManager {
         }
     }
 
-    toggleEmergencyResumeButtons(isEmergency) {
+    async toggleEmergencyResumeButtons() {
         const emergencyBtn = document.getElementById('emergencyStop');
         const resumeEbtn = document.getElementById('resumeEmergency');
         if (!emergencyBtn || !resumeEbtn) return;
 
-        if (isEmergency) {
+        let state = await this.api.getState();
+        if (state.isEmergencyMode) {
             emergencyBtn.style.display = 'none';
             resumeEbtn.style.display = '';
         } else {
             emergencyBtn.style.display = '';
             resumeEbtn.style.display = 'none';
         }
-    }
-        
-    getEmergencyStatus() {
-        return this.isEmergencyMode;
     }
 }
 

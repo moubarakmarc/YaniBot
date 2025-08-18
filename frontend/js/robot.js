@@ -18,9 +18,6 @@ class RobotManager {
         this.axisMapping = ['z', 'y', 'y', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
         this.isMoving = false;
         this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
-        this.isEmergencyMode = false;
-        this.isPaused = false;
-        this.queuedMovements = [];
         this.ui = null; // Will be set by UIManager
         this.api = null; // Will be set by APIManager
         this.RobotBuilderClass = RobotBuilderClass;
@@ -48,7 +45,7 @@ class RobotManager {
     
 
     // Movement Methods
-    async moveTo(start_angles, target_angles, duration = 2000, waitWhilePaused = null) {
+    async moveTo(start_angles, target_angles, duration = 2000) {
         while (this.isMoving) {
             console.warn('Robot is already moving, ignoring new command');
             await this.sleep(50);
@@ -57,9 +54,8 @@ class RobotManager {
         try {
             const path = await this.api.getInterpolatedPath(start_angles, target_angles, 30);
             
-            this.isMoving = true;
             // Animate visual robot
-            await this.animateToPosition(path, duration, waitWhilePaused);
+            await this.animateToPosition(path, duration);
             
             // Update current state
             this.currentAngles = [...path[path.length - 1]];
@@ -73,17 +69,23 @@ class RobotManager {
             this.isMoving = false;
         }
     }
-    
-    async animateToPosition(path, duration = 2000, waitWhilePaused = null) {
+
+    async animateToPosition(path, duration = 2000) {
         if (!Array.isArray(path) || path.length === 0) return;
         // Animate through the path
         for (let i = 0; i < path.length; i++) {
-            if (waitWhilePaused) await waitWhilePaused();
+            await this.waitWhilePaused();
+            const limitCheck = await this.api.check_joint_limits(path[i]);
+            if (limitCheck && limitCheck.success === false) {
+                console.warn('❌ Joint limit violation detected, stopping animation');
+                break;
+            }
+            await this.api.setMovingState(true);
             this.setJointAngles(path[i]);
-            if (this.ui && this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
+            if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
             await this.sleep(duration / path.length);
         }
-        // Optionally update currentAngles to last pose
+        // Update currentAngles to last pose
         this.currentAngles = [...path[path.length - 1]];
     }
     
@@ -157,6 +159,19 @@ class RobotManager {
         };
     }
     
+    async waitWhilePaused() {
+        let state = await this.api.getState();
+        while (state.isEmergencyMode || state.isPaused) {
+            if (state.isEmergencyMode) {
+                console.warn('⏸️ Waiting for emergency mode to clear...');
+            } else {
+                console.warn('⏸️ Waiting for user pause to end...');
+            }
+            await this.sleep(100); // Check every 100ms
+            state = await this.api.getState();
+        }
+    }
+
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }

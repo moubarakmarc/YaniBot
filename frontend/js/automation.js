@@ -5,9 +5,6 @@ class AutomationManager {
         this.robot = robotManager;
         this.binManager = new BinManager(robotManager.scene);
         this.cycleCount = 0;
-        this.isRunning = false;
-        this.isPausedEmergency = false;
-        this.isPausedUser = false;
         this.emergencyManager = emergencyManager;
         this.emergencyMonitorInterval = null; // For emergency monitoring
         this.currentlyHeldObject = null;
@@ -24,20 +21,17 @@ class AutomationManager {
     }
 
     async start() {
-        if (this.isRunning) return;
+        // disable start automation after first click
         if (this.binManager.isEmpty()) throw new Error('No objects to move - reset the scene first');
-        this.isRunning = true;
+        await this.api.setMovingState(true);
         this.startEmergencyMonitor();
-        this.isPausedEmergency = false;
-        this.isPausedUser = false;
         this.cycleCount = 0;
+        console.log('line 29 ok');
         this.automationLoop();
     }
 
     async stop() {
-        this.isRunning = false;
-        this.isPausedEmergency = false;
-        this.isPausedUser = false;
+        this.api.setMovingState(false);
         if (this.automationInterval) clearTimeout(this.automationInterval);
         //await this.robot.moveTo(this.robot.positions.home, 2000);
         this.currentAction = 'Stopped';
@@ -46,14 +40,16 @@ class AutomationManager {
     }
 
     async automationLoop() {
-        while (this.isRunning) {
+        let state = await this.api.getState();
+        console.log(state.isMoving);
+        while (state.isMoving) {
             try {
                 const shouldContinue = await this.performCycle();
                 if (!shouldContinue) break; // Stop loop if bins are empty
                 await this.sleep(this.cycleDelay);
             } catch (error) {
                 console.error('Automation error:', error);
-                this.isRunning = false;
+                this.api.setMovingState(false);
                 break;
             }
         }
@@ -67,7 +63,7 @@ class AutomationManager {
         if (!sourceBin || this.binManager.isEmpty(sourceBin)) {
             console.log('🚫 No valid transfer pair available. Stopping automation.');
             this.ui.showStatus('Automation stopped: No objects left to move', 'warning');
-            this.isRunning = false;
+            this.api.setMovingState(false);
             this.currentAction = 'Stopped: No objects left to move';
             if (this.ui && this.ui.updateAutomationStatus) this.ui.updateAutomationStatus();
             return false;
@@ -93,44 +89,31 @@ class AutomationManager {
             const dropLiftPos = this.robot.positions[`${targetBin}BinLift`];
 
             // 1. Move to pick position (home → approach → pick)
-            await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.currentAngles, approachPos, 700, this.waitWhilePaused.bind(this));
-            await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.currentAngles, pickPos, 700, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, approachPos, 700);
+            await this.robot.moveTo(this.robot.currentAngles, pickPos, 700);
 
             /// 2. Pick object
-            await this.waitWhilePaused();
             await this.pickObject(sourceBin);
 
             if (this.ui && this.ui.updateBinCounts) this.ui.updateBinCounts();
 
             // 3. Move to drop position (pick → lift → intermediate → dropApproach → drop)
-            await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.currentAngles, liftPos, 700, this.waitWhilePaused.bind(this));
-            await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700, this.waitWhilePaused.bind(this));
-            await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.currentAngles, dropApproachPos, 700, this.waitWhilePaused.bind(this));
-            await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.currentAngles, dropPos, 600, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, liftPos, 700);
+            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700);
+            await this.robot.moveTo(this.robot.currentAngles, dropApproachPos, 700);
+            await this.robot.moveTo(this.robot.currentAngles, dropPos, 600);
 
             // 4. Drop object
-            await this.waitWhilePaused();
             await this.dropObject(targetBin);
 
             if (this.ui && this.ui.updateBinCounts) this.ui.updateBinCounts();
 
             // 5. Move back home (drop → dropLift → home)
-            await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.currentAngles, dropLiftPos, 700, this.waitWhilePaused.bind(this));
-            await this.waitWhilePaused();
-            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700, this.waitWhilePaused.bind(this));
+            await this.robot.moveTo(this.robot.currentAngles, dropLiftPos, 700);
+            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700);
 
         } catch (error) {
             console.error('Pick and place failed:', error);
-            if (this.currentlyHeldObject) {
-                try { await this.emergencyDrop(); } catch (dropError) {}
-            }
             throw error;
         }
     }
@@ -157,21 +140,7 @@ class AutomationManager {
         console.log(`📦 Object dropped in ${binName} bin`);
     }
 
-    async emergencyDrop() {
-        if (this.currentlyHeldObject) {
-            this.binManager.dropObject(this.currentlyHeldObject, 'left');
-            this.detachObjectFromRobot();
-            this.currentlyHeldObject = null;
-        }
-        await this.robot.moveTo(this.robot.positions.home, 1000);
-    }
-
-    async waitWhilePaused() {
-        while ((this.isPausedEmergency || this.isPausedUser) && this.isRunning) {
-            await this.sleep(100); // Check every 100ms
-        }
-    }
-
+    // add to robot script
     attachObjectToRobot(object) {
         if (this.robot.joints[5]) {
             const flangePosition = new THREE.Vector3();
@@ -182,6 +151,7 @@ class AutomationManager {
         }
     }
 
+    // add to robot script
     detachObjectFromRobot() {
         if (this.currentlyHeldObject && this.robot.joints[5]) {
             // Remove from robot flange
@@ -195,10 +165,12 @@ class AutomationManager {
         }
     }
 
+    // check if we can delete this
     startEmergencyMonitor() {
         if (this.emergencyMonitorInterval) return;
-        this.emergencyMonitorInterval = setInterval(() => {
-            if (this.emergencyManager && this.emergencyManager.getEmergencyStatus()) {
+        this.emergencyMonitorInterval = setInterval(async () => {
+            let state = await this.api.getState();
+            if (state.isEmergencyMode) {
                 if (!this.isPausedEmergency && this.isRunning) {
                     this.isPausedEmergency = true;
                     this.currentAction = 'Paused: Emergency Mode Active';
@@ -218,19 +190,6 @@ class AutomationManager {
         if (this.emergencyMonitorInterval) {
             clearInterval(this.emergencyMonitorInterval);
             this.emergencyMonitorInterval = null;
-        }
-    }
-
-    togglePause() {
-        if (!this.isRunning) return;
-        if (this.isPausedUser) {
-            this.isPausedUser = false;
-            this.currentAction = 'Resumed by User';
-            console.info('▶️ Automation resumed by user.');
-        } else {
-            this.isPausedUser = true;
-            this.currentAction = 'Paused by User';
-            console.warn('⏸️ Automation paused by user.');
         }
     }
 
