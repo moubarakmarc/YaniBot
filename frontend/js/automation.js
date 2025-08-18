@@ -37,6 +37,7 @@ class AutomationManager {
         }        
         if (this.automationInterval) clearTimeout(this.automationInterval);
         this.api.setMovingState(false);
+        this.api.setStopState(false);
         this.currentAction = 'Stopped';
         this.stopEmergencyMonitor();
         console.log('✅ Automation stopped');

@@ -156,7 +156,9 @@ class UIManager {
     async handlePauseAutomation() {
         try {
             await this.api.setPauseState(true);
+            await this.api.setMovingState(false);
             this.updatePauseResumeButtons();
+            this.toggleOverrideControls();
             this.showStatus('Automation paused', 'success');
             
         } catch (error) {
