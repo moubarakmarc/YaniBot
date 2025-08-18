@@ -5,14 +5,14 @@ class UIManager {
         this.automation = automationManager;
         this.emergencyManager = emergencyManager;
         this.elements = {};
-        this.arrowDebounceTimers = {};
+        this.inputDebounceTimers = {};
         this.api = null; 
     }
     
     init() {
         this.cacheElements();
         this.bindEvents();
-        this.initJointArrows();
+        this.initJointInputs();
         console.log("✅ UI Manager initialized");
     }
     
@@ -35,7 +35,7 @@ class UIManager {
             
             // Joint controls
             manualJointControl: document.getElementById('manual-override'),
-            jointArrows: {},
+            jointInputs: {},
             jointValues: {},
             resetJointsBtn: document.getElementById('resetJoints'),
 
@@ -46,8 +46,8 @@ class UIManager {
             logControls: document.getElementById('log-controls'),
             logDropdownBtn: document.getElementById('logDropdownBtn'),
         };
-        // Cache joint arrow and value elements
-        this.elements.jointArrows = {
+        // Cache joint input and value elements
+        this.elements.jointInputs = {
             a1: document.getElementById('a1-input'),
             a2: document.getElementById('a2-input'),
             a3: document.getElementById('a3-input'),
@@ -110,56 +110,36 @@ class UIManager {
         });
 
         // Joint controls
-        document.querySelectorAll('.joint-arrow').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const joint = parseInt(btn.dataset.joint);
-                const dir = parseInt(btn.dataset.dir);
-                const input = document.getElementById(`a${joint+1}-input`);
-                const min = parseInt(input.min);
-                const max = parseInt(input.max);
-                let value = parseInt(input.value) + dir;
-                value = Math.max(min, Math.min(max, value));
-                input.value = value;
-                // Call your handler to move the joint
-                this.handleJointArrowChange(joint, value, input);
-                this.handleJointArrowFinalChange(joint, value);
-            });
-        });
-        document.querySelectorAll('.joint-input').forEach(input => {
-            input.addEventListener('change', (e) => {
-                const joint = parseInt(input.id.match(/\d+/)[0]) - 1;
-                let value = parseInt(input.value);
-                const min = parseInt(input.min);
-                const max = parseInt(input.max);
-                value = Math.max(min, Math.min(max, value));
-                input.value = value;
-                this.handleJointArrowChange(joint, value, input);
-                this.handleJointArrowFinalChange(joint, value);
+        Object.entries(this.elements.jointInputs).forEach(([jointKey, inputEl], idx) => {
+            inputEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    let value = parseFloat(inputEl.value);
+                    const min = parseFloat(inputEl.min);
+                    const max = parseFloat(inputEl.max);
+                    value = Math.max(min, Math.min(max, value));
+                    inputEl.value = value; // Clamp value in input
+                    // Update the value display immediately
+                    const valueDisplay = this.elements.jointValues[jointKey];
+                    if (valueDisplay) valueDisplay.textContent = `${Math.round(value)}°`;
+                    // Move the robot and send to backend
+                    this.handleJointInputChange(idx, value, valueDisplay);
+                }
             });
         });
 
+
         console.log("🔗 UI Events bound");
     }
-    
-    initJointArrows() {
+
+    initJointInputs() {
         const joints = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
         
         joints.forEach((joint, index) => {
-            const slider = this.elements.jointArrows[joint];
-            const valueDisplay = this.elements.jointArrows[joint];
-            
-            if (slider && valueDisplay) {
-                slider.addEventListener('input', (e) => {
-                    this.handleJointArrowChange(index, parseFloat(e.target.value), valueDisplay);
-                });
-                
-                slider.addEventListener('change', (e) => {
-                    this.handleJointArrowFinalChange(index, parseFloat(e.target.value));
-                });
-            }
+            const input = this.elements.jointInputs[joint];
+            const valueDisplay = this.elements.jointValues[joint];
         });
-        
-        console.log("🎚️ Joint sliders initialized");
+
+        console.log("🎚️ Joint Inputs initialized");
     }
     
     // Event Handlers
@@ -249,7 +229,7 @@ class UIManager {
         }
     }
 
-    async handleJointArrowChange(jointIndex, angle, valueDisplay) {
+    async handleJointInputChange(jointIndex, angle, valueDisplay) {
         let state = await this.api.getState();
 
         if (state.isEmergencyMode) {
@@ -264,22 +244,14 @@ class UIManager {
         this.robot.moveSingleJoint(jointIndex, angle);
         
         // Clear existing debounce timer
-        if (this.arrowDebounceTimers[jointIndex]) {
-            clearTimeout(this.arrowDebounceTimers[jointIndex]);
+        if (this.inputDebounceTimers[jointIndex]) {
+            clearTimeout(this.inputDebounceTimers[jointIndex]);
         }
         
         // Set new debounce timer for backend update
-        this.arrowDebounceTimers[jointIndex] = setTimeout(() => {
+        this.inputDebounceTimers[jointIndex] = setTimeout(() => {
             this.sendJointAngleToBackend(jointIndex, angle);
         }, 3000); // 3000ms debounce
-    }
-
-    async handleJointArrowFinalChange(jointIndex, angle) {
-        // Final change - send immediately to backend
-        let state = await this.api.getState();
-        if (!state.isMoving) {
-            this.sendJointAngleToBackend(jointIndex, angle);
-        }
     }
     
     async sendJointAngleToBackend(jointIndex, angle) {
@@ -340,12 +312,8 @@ class UIManager {
 
     updateJointDisplays(angles) {
         for (let i = 0; i < angles.length && i < 6; i++) {
-            const input = this.elements.jointArrows[`a${i + 1}`];
             const valueDisplay = this.elements.jointValues[`a${i + 1}`];
 
-            if (input) {
-                input.value = Math.round(angles[i]);
-            }
             if (valueDisplay) {
                 valueDisplay.textContent = `${Math.round(angles[i])}°`;
             }
