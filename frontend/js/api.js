@@ -76,6 +76,33 @@ class APIManager {
         }
     }
 
+    async setCurrentAngles(angles = null, index = null, value = null) {
+        try {
+            let payload = {};
+            if (Array.isArray(angles) && angles.length === 6) {
+                payload.joint_angles = angles;
+            } else if (index !== null && value !== null) {
+                payload.index = index;
+                payload.value = value;
+            } else {
+                throw new Error('Provide either 6 joint angles or index and value.');
+            }
+
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.ANGLES}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (window.LOG_OPTIONS.currentAngles) console.log('current_angles response:', data);
+            if (!response.ok) throw new Error('Failed to set joint angles');
+            return data;
+        } catch (error) {
+            console.warn('⚠️ Failed to set joint angles:', error.message);
+            return null;
+        }
+    }
+
     async setMovingState(isMoving) {
         try {
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.MOVING}`, {

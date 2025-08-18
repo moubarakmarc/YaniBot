@@ -1,4 +1,4 @@
-convert states to backend
-paaused
-emergency
-...
+handle reset robot to home
+handle manual override joints api call
+handle automation status
+update current angles in robot backend

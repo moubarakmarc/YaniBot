@@ -20,6 +20,7 @@ window.ENV = {
         RESET: '/reset',
         HEALTH: '/health',
         MOVING: '/moving',
+        ANGLES: '/angles',
         PAUSE: '/pause',
         STOP: '/stop',
         INTERPOLATE: '/interpolate',

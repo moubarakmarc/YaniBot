@@ -99,40 +99,71 @@
             
             <!-- Joint Sliders -->
             <div class="joint-controls-grid">
-                <div class="joint-slider">
-                    <label>A1 (Base): <span id="a1-value">0°</span></label>
-                    <input type="range" id="a1-slider" min="-360" max="360" value="0" step="1">
-                    <div class="joint-limits">-180° to 180°</div>
+                <div class="joint-arrow-control">
+                    <div class="joint-label-stack">
+                        <label>Base:</label>
+                        <span class="joint-limits">-180° to 180°</span>
+                    </div>
+                    <div class="joint-controls-group">
+                        <button class="joint-arrow" data-joint="0" data-dir="-1">◀</button>
+                        <input type="number" id="a1-input" min="-360" max="360" value="0" step="1" class="joint-input">
+                        <button class="joint-arrow" data-joint="0" data-dir="1">▶</button>
+                    </div>
                 </div>
-                
-                <div class="joint-slider">
-                    <label>A2 (Shoulder): <span id="a2-value">0°</span></label>
-                    <input type="range" id="a2-slider" min="-360" max="360" value="0" step="1">
-                    <div class="joint-limits">-65° to 80°</div>
+                <div class="joint-arrow-control">
+                    <div class="joint-label-stack">
+                        <label>Shoulder:</label>
+                        <span class="joint-limits">-65° to 80°</span>
+                    </div>
+                    <div class="joint-controls-group">
+                        <button class="joint-arrow" data-joint="0" data-dir="-1">◀</button>
+                        <input type="number" id="a1-input" min="-360" max="360" value="0" step="1" class="joint-input">
+                        <button class="joint-arrow" data-joint="0" data-dir="1">▶</button>
+                    </div>
                 </div>
-                
-                <div class="joint-slider">
-                    <label>A3 (Elbow): <span id="a3-value">0°</span></label>
-                    <input type="range" id="a3-slider" min="-360" max="360" value="0" step="1">
-                    <div class="joint-limits">-180° to 60°</div>
+                <div class="joint-arrow-control">
+                    <div class="joint-label-stack">
+                        <label>Elbow:</label>
+                        <span class="joint-limits">-180° to 60°</span>
+                    </div>
+                    <div class="joint-controls-group">
+                        <button class="joint-arrow" data-joint="0" data-dir="-1">◀</button>
+                        <input type="number" id="a1-input" min="-360" max="360" value="0" step="1" class="joint-input">
+                        <button class="joint-arrow" data-joint="0" data-dir="1">▶</button>
+                    </div>
                 </div>
-                
-                <div class="joint-slider">
-                    <label>A4 (Wrist Roll): <span id="a4-value">0°</span></label>
-                    <input type="range" id="a4-slider" min="-360" max="360" value="0" step="1">
-                    <div class="joint-limits">-300° to 300°</div>
+                <div class="joint-arrow-control">
+                    <div class="joint-label-stack">
+                        <label>Wrist Roll:</label>
+                        <span class="joint-limits">-300° to 300°</span>
+                    </div>
+                    <div class="joint-controls-group">
+                        <button class="joint-arrow" data-joint="0" data-dir="-1">◀</button>
+                        <input type="number" id="a1-input" min="-360" max="360" value="0" step="1" class="joint-input">
+                        <button class="joint-arrow" data-joint="0" data-dir="1">▶</button>
+                    </div>
                 </div>
-                
-                <div class="joint-slider">
-                    <label>A5 (Wrist Pitch): <span id="a5-value">0°</span></label>
-                    <input type="range" id="a5-slider" min="-360" max="360" value="0" step="1">
-                    <div class="joint-limits">-120° to 120°</div>
+                <div class="joint-arrow-control">
+                    <div class="joint-label-stack">
+                        <label>Wrist Pitch:</label>
+                        <span class="joint-limits">-120° to 120°</span>
+                    </div>
+                    <div class="joint-controls-group">
+                        <button class="joint-arrow" data-joint="0" data-dir="-1">◀</button>
+                        <input type="number" id="a1-input" min="-360" max="360" value="0" step="1" class="joint-input">
+                        <button class="joint-arrow" data-joint="0" data-dir="1">▶</button>
+                    </div>
                 </div>
-                
-                <div class="joint-slider">
-                    <label>A6 (Flange): <span id="a6-value">0°</span></label>
-                    <input type="range" id="a6-slider" min="-360" max="360" value="0" step="1">
-                    <div class="joint-limits">-300° to 300°</div>
+                <div class="joint-arrow-control">
+                    <div class="joint-label-stack">
+                        <label>Flange:</label>
+                        <span class="joint-limits">-300° to 300°</span>
+                    </div>
+                    <div class="joint-controls-group">
+                        <button class="joint-arrow" data-joint="0" data-dir="-1">◀</button>
+                        <input type="number" id="a1-input" min="-360" max="360" value="0" step="1" class="joint-input">
+                        <button class="joint-arrow" data-joint="0" data-dir="1">▶</button>
+                    </div>
                 </div>
             </div>
             
@@ -151,6 +182,7 @@
                 <label><input type="checkbox" id="logInterpolatedPath" checked> Interpolated Path</label><br>
                 <label><input type="checkbox" id="logJointLimits" checked> Joint Limits</label><br>
                 <label><input type="checkbox" id="logMovingState" checked> Moving State</label><br>
+                <label><input type="checkbox" id="logCurrentAngles" checked> Current Angles</label><br>
                 <label><input type="checkbox" id="logStopState" checked> Stop State</label><br>
                 <label><input type="checkbox" id="logPauseState" checked> Pause State</label><br>
                 <label><input type="checkbox" id="logEmergencyState" checked> Emergency State</label>

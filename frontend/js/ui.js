@@ -46,11 +46,8 @@ class UIManager {
             logDropdownBtn: document.getElementById('logDropdownBtn'),
         };
 
-        // Cache joint sliders and value displays
-        for (let i = 1; i <= 6; i++) {
-            this.elements.jointSliders[`a${i}`] = document.getElementById(`a${i}-slider`);
-            this.elements.jointValues[`a${i}`] = document.getElementById(`a${i}-value`);
-        }
+        // add arrows of joints
+        
         console.log("🗂️ UI Elements cached");
         
         
@@ -215,9 +212,6 @@ class UIManager {
 
     async handleJointSliderChange(jointIndex, angle, valueDisplay) {
         let state = await this.api.getState();
-        if (state.isMoving) {
-            return; // Don't allow manual control during automation
-        }
 
         if (state.isEmergencyMode) {
             this.showStatus('Robot is in emergency stop! Clear emergency before moving joints.', 'error');
@@ -228,9 +222,7 @@ class UIManager {
         valueDisplay.textContent = `${Math.round(angle)}°`;
         
         // Update visual robot immediately
-        if (this.robot.updateJointRotation) {
-            this.robot.updateJointRotation(jointIndex, angle);
-        }
+        this.robot.moveSingleJoint(jointIndex, angle);
         
         // Clear existing debounce timer
         if (this.sliderDebounceTimers[jointIndex]) {
@@ -240,7 +232,7 @@ class UIManager {
         // Set new debounce timer for backend update
         this.sliderDebounceTimers[jointIndex] = setTimeout(() => {
             this.sendJointAngleToBackend(jointIndex, angle);
-        }, 150); // 150ms debounce
+        }, 150); // 1000ms debounce
     }
     
     async handleJointSliderFinalChange(jointIndex, angle) {
@@ -254,11 +246,9 @@ class UIManager {
     async sendJointAngleToBackend(jointIndex, angle) {
         try {
             // Update robot's current angles
-            if (this.robot.currentAngles) {
-                this.robot.currentAngles[jointIndex] = angle;
-                
-                // Send full joint state to backend
-                await this.api.move(this.robot.currentAngles);
+            let state = await this.api.getState();
+            if (state.currentAngles) {
+                this.api.setCurrentAngles(null, jointIndex, angle);
             }
         } catch (error) {
             console.error('Failed to update backend:', error);

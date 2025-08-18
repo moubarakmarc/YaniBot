@@ -8,6 +8,7 @@ window.LOG_OPTIONS = {
     interpolatedPath: true,
     jointLimits: true,
     movingState: true,
+    currentAngles: true,
     stopState: true,
     pauseState: true,
     emergencyState: true
@@ -188,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // === Log Options Checkbox Sync ===
     [
         'state', 'reset', 'interpolatedPath', 'jointLimits',
-        'movingState', 'stopState', 'pauseState', 'emergencyState'
+        'movingState', 'currentAngles', 'stopState', 'pauseState', 'emergencyState'
     ].forEach(key => {
         const checkbox = document.getElementById('log' + key.charAt(0).toUpperCase() + key.slice(1));
         if (checkbox) {

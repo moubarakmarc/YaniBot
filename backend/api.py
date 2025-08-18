@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from robot import RobotArm
+from typing import Optional, List, Union
 import os
 import uvicorn
 import numpy as np
@@ -47,6 +48,11 @@ class InterpolateRequest(BaseModel):
 
 class JointLimitsResponse(BaseModel):
     joint_angles: list[float]
+
+class SetAnglesRequest(BaseModel):
+    joint_angles: Optional[List[float]] = Field(None, min_items=6, max_items=6)
+    value: Optional[float] = None
+    index: Optional[int] = None
 
 class EmergencyStateRequest(BaseModel):
     is_emergency: bool
@@ -125,6 +131,7 @@ def get_state():
         "isEmergencyMode": robot.isEmergencyMode,
         "isPaused": robot.isPaused,
         "isStopped": robot.isStopped,
+        "currentAngles": robot.currentAngles
     }
 
 @app.post("/reset")
@@ -176,6 +183,36 @@ def check_joint_limits(request: JointLimitsResponse):
             )
 
     return {"success": True}
+
+@app.post("/angles")
+def set_joint_angles(request: SetAnglesRequest):
+    """
+    Set the joint angles of the robot.
+    This endpoint allows the frontend to set the joint angles of the robot.
+    
+    Args:
+        request (SetAnglesRequest): Contains the joint angles to set or a specific value and index.
+    
+    Returns:
+        dict: A dictionary containing the success status and the current angles of the robot.
+    
+    Raises:
+        HTTPException: If the request is invalid or if an error occurs.
+    """
+    try:
+        if request.joint_angles is not None:
+            if len(request.joint_angles) != 6:
+                raise HTTPException(status_code=400, detail="Must provide 6 joint angles.")
+            robot.currentAngles = request.joint_angles
+        elif request.value is not None and request.index is not None:
+            if not (0 <= request.index < 6):
+                raise HTTPException(status_code=400, detail="Index must be between 0 and 5.")
+            robot.currentAngles[request.index] = request.value
+        else:
+            raise HTTPException(status_code=400, detail="Provide either joint_angles or value and index.")
+        return {"success": True, "currentAngles": robot.currentAngles}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/moving")
 def set_moving_state(request: MovingStateRequest):

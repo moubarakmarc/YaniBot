@@ -44,6 +44,14 @@ class RobotManager {
     }
     
     // Movement Methods
+    async moveSingleJoint(jointIndex, value, duration = 2000) {
+        let state = await this.api.getState();
+        const current_angles = state.currentAngles;
+        const target_angles = [...current_angles];
+        target_angles[jointIndex] = value;
+        await this.moveTo(current_angles, target_angles, duration);
+    }
+
     async moveTo(start_angles, target_angles, duration = 2000) {
         while (this.isMoving) {
             console.warn('Robot is already moving, ignoring new command');
@@ -58,6 +66,7 @@ class RobotManager {
             
             // Update current state
             this.currentAngles = [...path[path.length - 1]];
+            await this.api.setCurrentAngles(this.currentAngles, null, null);
             
             console.log('✅ Robot movement completed');
             
@@ -147,13 +156,6 @@ class RobotManager {
             // Safe intermediate positions
             intermediate1: [0.0, 30.0, 55.0, 0.0, 0.0, 0.0],
             
-            // Extended reach positions
-            extended: [0, 60, -30, 0, -30, 0],
-            folded: [0, -45, 90, 0, -45, 0],
-            
-            // Maintenance positions
-            maintenance: [0, -85, 85, 0, 0, 0],
-            park: [180, 0, 0, 0, 85, 0]
         };
     }
     
