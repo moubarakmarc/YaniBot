@@ -44,7 +44,6 @@ class AutomationManager {
 
     async automationLoop() {
         let state = await this.api.getState();
-        console.log(state.isMoving);
         while (state.isMoving && !state.isStopped) {
             try {
                 const shouldContinue = await this.performCycle();

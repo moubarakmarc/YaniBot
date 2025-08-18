@@ -308,11 +308,6 @@ class UIManager {
         this.updatePauseResumeButtons();
     }
 
-    async toggleOverrideControls() {
-        let state = await this.api.getState();
-        this.elements.manualJointControl.disabled = state.isMoving;
-    }
-
     async updatePauseResumeButtons() {
         let state = await this.api.getState();
         if (state.isPaused) {
@@ -333,6 +328,16 @@ class UIManager {
             this.elements.resumeBtn.disabled = true;
         }
     }
+
+    async toggleOverrideControls() {
+        let state = await this.api.getState();
+        if (state.isMoving) {
+            this.elements.manualJointControl.classList.add('disabled');
+        } else {
+            this.elements.manualJointControl.classList.remove('disabled');
+        }
+    }
+
 
     
     showStatus(message, type = 'info') {
