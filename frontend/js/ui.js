@@ -38,8 +38,12 @@ class UIManager {
             jointSliders: {},
             jointValues: {},
             
-            // Other controls
+            // Emergency controls
             emergencyStopBtn: document.getElementById('emergencyStop'),
+            
+            // Log Controls
+            logControls: document.getElementById('log-controls'),
+            logDropdownBtn: document.getElementById('logDropdownBtn'),
         };
 
         // Cache joint sliders and value displays
@@ -79,7 +83,19 @@ class UIManager {
                 this.automation.strategy = e.target.value;
             });
         }
-        
+
+        // Log controls
+        this.elements.logDropdownBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.elements.logControls?.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!this.elements.logControls.classList.contains('open')) {
+                this.elements.logControls?.classList.remove('open');
+            }
+        });
+
         console.log("🔗 UI Events bound");
     }
     

@@ -556,6 +556,40 @@ button:disabled {
     margin: 0 auto 20px;
 }
 
+/* Dropdown Section Styling */
+.dropdown-section {
+    margin: 16px 0;
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-btn {
+    padding: 6px 16px;
+    font-size: 1em;
+    background: #f5f5f5;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 110%;
+    background: #000000;
+    min-width: 180px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 12px;
+    z-index: 100;
+}
+
+.dropdown-section.open .dropdown-content {
+    display: block;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

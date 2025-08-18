@@ -1,17 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YaniBot - ABB IRB6600 Simulator</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <!-- Main UI Panel -->
-    <div id="ui">
-        <div class="ui-header">
-            <h1>🤖 YaniBot Control Panel</h1>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>YaniBot - ABB IRB6600 Simulator</title>
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <!-- Main UI Panel -->
+        <div id="ui">
+            <div class="ui-header">
+                <h1>🤖 YaniBot Control Panel</h1>
+            </div>
+
+        <!-- Workspace Information -->
+        <div id="workspace-info">
+            <h3>📊 Workspace Layout</h3>
+            <div class="workspace-legend">
+                <div class="workspace-item">
+                    <span class="workspace-color red"></span>
+                    <span>Safety Boundaries</span>
+                </div>
+                <div class="workspace-item">
+                    <span class="workspace-color yellow"></span>
+                    <span>Workspace Boundaries</span>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Action Buttons -->
@@ -126,35 +141,29 @@
                 <button id="resetJoints" class="btn-reset">🏠 Reset to Home</button> 
             </div>
         </div>
-
-        <!-- Workspace Information -->
-        <div id="workspace-info">
-            <h3>📊 Workspace Layout</h3>
-            <div class="workspace-legend">
-                <div class="workspace-item">
-                    <span class="workspace-color red"></span>
-                    <span>Safety Boundaries</span>
-                </div>
-                <div class="workspace-item">
-                    <span class="workspace-color yellow"></span>
-                    <span>Workspace Boundaries</span>
-                </div>
+        
+        <!-- Log Controls Dropdown -->
+        <div id="log-controls" class="dropdown-section">
+            <button id="logDropdownBtn" class="dropdown-btn">Log Options ▼</button>
+            <div id="logDropdown" class="dropdown-content">
+                <label><input type="checkbox" id="logState" checked> State</label><br>
+                <label><input type="checkbox" id="logReset" checked> Reset</label><br>
+                <label><input type="checkbox" id="logInterpolatedPath" checked> Interpolated Path</label><br>
+                <label><input type="checkbox" id="logJointLimits" checked> Joint Limits</label><br>
+                <label><input type="checkbox" id="logMovingState" checked> Moving State</label><br>
+                <label><input type="checkbox" id="logStopState" checked> Stop State</label><br>
+                <label><input type="checkbox" id="logPauseState" checked> Pause State</label><br>
+                <label><input type="checkbox" id="logEmergencyState" checked> Emergency State</label>
             </div>
         </div>
 
-        <!-- System Information -->
-        <div id="system-info">
-            <h3>ℹ️ System Information</h3>
-            <div class="system-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Robot Model:</span>
-                    <span class="stat-value">ABB IRB6600</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">DOF:</span>
-                    <span class="stat-value">6-Axis</span>
-                </div>
+        <div class="stat-item">
+                <span class="stat-label">Robot Model:</span>
+                <span class="stat-value">ABB IRB6600</span>
             </div>
+            <div class="stat-item">
+                <span class="stat-label">DOF:</span>
+                <span class="stat-value">6-Axis</span>
         </div>
     </div>
     
@@ -172,7 +181,6 @@
 
     <!-- Scripts - Load in correct order -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!--script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script-->
     
     <!-- Load env.js FIRST before other modules -->
     <script src="js/env.js"></script>    
