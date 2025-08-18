@@ -43,7 +43,6 @@ class RobotManager {
         console.log("🤖 Enhanced ABB IRB6600 robot initialized");
     }
     
-
     // Movement Methods
     async moveTo(start_angles, target_angles, duration = 2000) {
         while (this.isMoving) {
@@ -132,7 +131,7 @@ class RobotManager {
     getPresetPositions() {
         return {
             // change to become default ABB IRB6600 home position
-            home: [0,0,0,0,0,0], // Default home position
+            home: [0.0, 30.0, 55.0, 0.0, 0.0, 0.0], // Default home position
             
             // Realistic ABB IRB6600 positions
             leftBinApproach: [-45.0, 50.0, 55.0, 0.0, 0.0, 0.0],
