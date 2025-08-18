@@ -249,6 +249,12 @@ def interpolate_path_to_move(request: InterpolateRequest, steps: int = 20):
         HTTPException: If the interpolation fails or if the angles are invalid.
     """
     try:
+        # Calculate the maximum absolute difference between any joint
+        diffs = [abs(a - b) for a, b in zip(request.start_angles, request.target_angles)]
+        max_diff = max(diffs)
+        # If the largest difference is very small, reduce steps
+        if max_diff < 5.0:
+            steps = 2
         path = list(interpolate_path(request.start_angles, request.target_angles, steps=steps))
         return {
             "success": True,

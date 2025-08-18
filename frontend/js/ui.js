@@ -5,7 +5,7 @@ class UIManager {
         this.automation = automationManager;
         this.emergencyManager = emergencyManager;
         this.elements = {};
-        this.sliderDebounceTimers = {};
+        this.arrowDebounceTimers = {};
         this.api = null; 
     }
     
@@ -35,7 +35,7 @@ class UIManager {
             
             // Joint controls
             manualJointControl: document.getElementById('manual-override'),
-            jointSliders: {},
+            jointArrows: {},
             jointValues: {},
             
             // Emergency controls
@@ -45,8 +45,23 @@ class UIManager {
             logControls: document.getElementById('log-controls'),
             logDropdownBtn: document.getElementById('logDropdownBtn'),
         };
-
-        // add arrows of joints
+        // Cache joint arrow and value elements
+        this.elements.jointArrows = {
+            a1: document.getElementById('a1-input'),
+            a2: document.getElementById('a2-input'),
+            a3: document.getElementById('a3-input'),
+            a4: document.getElementById('a4-input'),
+            a5: document.getElementById('a5-input'),
+            a6: document.getElementById('a6-input'),
+        };
+        this.elements.jointValues = {
+            a1: document.getElementById('a1-value'),
+            a2: document.getElementById('a2-value'),
+            a3: document.getElementById('a3-value'),
+            a4: document.getElementById('a4-value'),
+            a5: document.getElementById('a5-value'),
+            a6: document.getElementById('a6-value'),
+        };
         
         console.log("🗂️ UI Elements cached");
         
@@ -105,8 +120,8 @@ class UIManager {
                 value = Math.max(min, Math.min(max, value));
                 input.value = value;
                 // Call your handler to move the joint
-                this.handleJointSliderChange(joint, value, input);
-                this.handleJointSliderFinalChange(joint, value);
+                this.handleJointArrowChange(joint, value, input);
+                this.handleJointArrowFinalChange(joint, value);
             });
         });
         document.querySelectorAll('.joint-input').forEach(input => {
@@ -117,8 +132,8 @@ class UIManager {
                 const max = parseInt(input.max);
                 value = Math.max(min, Math.min(max, value));
                 input.value = value;
-                this.handleJointSliderChange(joint, value, input);
-                this.handleJointSliderFinalChange(joint, value);
+                this.handleJointArrowChange(joint, value, input);
+                this.handleJointArrowFinalChange(joint, value);
             });
         });
 
@@ -129,8 +144,8 @@ class UIManager {
         const joints = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
         
         joints.forEach((joint, index) => {
-            const slider = this.elements.jointSliders[joint];
-            const valueDisplay = this.elements.jointValues[joint];
+            const slider = this.elements.jointArrows[joint];
+            const valueDisplay = this.elements.jointArrows[joint];
             
             if (slider && valueDisplay) {
                 slider.addEventListener('input', (e) => {
@@ -254,14 +269,14 @@ class UIManager {
         this.robot.moveSingleJoint(jointIndex, angle);
         
         // Clear existing debounce timer
-        if (this.sliderDebounceTimers[jointIndex]) {
-            clearTimeout(this.sliderDebounceTimers[jointIndex]);
+        if (this.arrowDebounceTimers[jointIndex]) {
+            clearTimeout(this.arrowDebounceTimers[jointIndex]);
         }
         
         // Set new debounce timer for backend update
-        this.sliderDebounceTimers[jointIndex] = setTimeout(() => {
+        this.arrowDebounceTimers[jointIndex] = setTimeout(() => {
             this.sendJointAngleToBackend(jointIndex, angle);
-        }, 150); // 1000ms debounce
+        }, 3000); // 3000ms debounce
     }
 
     async handleJointArrowFinalChange(jointIndex, angle) {
@@ -328,14 +343,13 @@ class UIManager {
         }
     }
 
-    
     updateJointDisplays(angles) {
         for (let i = 0; i < angles.length && i < 6; i++) {
-            const slider = this.elements.jointSliders[`a${i + 1}`];
+            const input = this.elements.jointArrows[`a${i + 1}`];
             const valueDisplay = this.elements.jointValues[`a${i + 1}`];
-            
-            if (slider) {
-                slider.value = Math.round(angles[i]);
+
+            if (input) {
+                input.value = Math.round(angles[i]);
             }
             if (valueDisplay) {
                 valueDisplay.textContent = `${Math.round(angles[i])}°`;
