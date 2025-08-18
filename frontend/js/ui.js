@@ -37,7 +37,8 @@ class UIManager {
             manualJointControl: document.getElementById('manual-override'),
             jointArrows: {},
             jointValues: {},
-            
+            resetJointsBtn: document.getElementById('resetJoints'),
+
             // Emergency controls
             emergencyStopBtn: document.getElementById('emergencyStop'),
             
@@ -75,8 +76,8 @@ class UIManager {
         this.elements.stopBtn?.addEventListener('click', () => this.handleStopAutomation());
         this.elements.pauseBtn?.addEventListener('click', () => this.handlePauseAutomation());
         this.elements.resumeBtn?.addEventListener('click', () => this.handleResumeAutomation());
-        this.elements.resetBtn?.addEventListener('click', () => this.handleResetRobot());
-        
+        this.elements.resetJointsBtn?.addEventListener('click', () => this.handleResetJoints());
+
         // Utility control events
         this.elements.emergencyStopBtn?.addEventListener('click', () => this.emergencyManager?.activateEmergencyMode());
         
@@ -236,17 +237,11 @@ class UIManager {
         }
     }
     
-    async handleResetRobot() {
-        let state = await this.api.getState();
-        if (state.isMoving) {
-            this.showStatus('Cannot reset: Stop automation first', 'error');
-            return;
-        }
-        
+    async handleResetJoints() {
         try {
             this.showStatus('Resetting robot...', 'info');
-            let target_angles = await this.api.reset();
-            await this.robot.moveTo(this.robot.currentAngles, target_angles, 1000);
+            let resetData = await this.api.reset();
+            await this.robot.moveTo(resetData.current_angles, resetData.target_angles, 1000);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);

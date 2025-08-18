@@ -150,7 +150,7 @@ def reset_robot():
         return {
             "success": True,
             "message": "Robot reset to home position",
-            "current_angles": robot.current_angles,
+            "current_angles": robot.currentAngles,
             "target_angles": home_position
         }
     except Exception as e:

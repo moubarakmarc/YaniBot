@@ -114,9 +114,6 @@ class RobotManager {
         const radians = (angle * Math.PI) / 180;
         const axis = joint.userData.axis;
         
-        // // Reset rotation
-        // joint.rotation.set(0, 0, 0);
-        
         await this.waitWhilePaused();
         
 
