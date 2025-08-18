@@ -7,32 +7,12 @@ class APIManager {
     async init() {
         // Try to fetch backend state or health endpoint
         try {
-            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.STATE}`);
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.ROOT}`);
             if (!response.ok) throw new Error(`Backend not reachable: ${response.status}`);
-            // Optionally, check response content here
             return true;
         } catch (error) {
             console.error('❌ Failed to connect to backend:', error.message);
             throw new Error('Backend connection failed');
-        }
-    }
-
-    async move(angles) {
-        try {
-            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.MOVE}`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ target_angles: angles })
-            });
-            const responseText = await response.text();
-            if (!response.ok) throw new Error(responseText);
-            return JSON.parse(responseText);
-        } catch (error) {
-            console.warn('⚠️ Backend communication failed:', error.message);
-            return null;
         }
     }
 
@@ -71,5 +51,35 @@ class APIManager {
         const data = await response.json();
         console.log("Interpolated path:", data);
         return data.steps;
+    }
+
+    async setMovingState(isMoving) {
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.MOVE}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_moving: isMoving })
+            });
+            if (!response.ok) throw new Error('Failed to set moving state');
+            return await response.json();
+        } catch (error) {
+            console.warn('⚠️ Failed to set moving state:', error.message);
+            return null;
+        }
+    }
+
+    async setEmergencyState(isEmergency) {
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.EMERGENCY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_emergency: isEmergency })
+            });
+            if (!response.ok) throw new Error('Failed to set emergency state');
+            return await response.json();
+        } catch (error) {
+            console.warn('⚠️ Failed to set emergency state:', error.message);
+            return null;
+        }
     }
 }

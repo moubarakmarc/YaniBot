@@ -148,7 +148,9 @@ class EmergencyManager {
         
         // Change square color to red
         this.movableObject.material.color.setHex(0xFF0000);
-
+        
+        this.api.setEmergencyState(true)
+        
         this.isEmergencyMode = true;
         
         // Show emergency UI
@@ -169,6 +171,7 @@ class EmergencyManager {
         // Auto-resume robot movement
         if (this.isEmergencyMode) {
             this.isEmergencyMode = false;
+            this.api.setEmergencyState(false)
         }
 
         this.toggleEmergencyResumeButtons(false); 

@@ -19,6 +19,7 @@ class RobotManager {
         this.isMoving = false;
         this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
         this.isEmergencyMode = false;
+        this.isPaused = false;
         this.queuedMovements = [];
         this.ui = null; // Will be set by UIManager
         this.api = null; // Will be set by APIManager
@@ -54,9 +55,9 @@ class RobotManager {
         }
         
         try {
-            this.isMoving = true;
             const path = await this.api.getInterpolatedPath(start_angles, target_angles, 30);
-
+            
+            this.isMoving = true;
             // Animate visual robot
             await this.animateToPosition(path, duration, waitWhilePaused);
             

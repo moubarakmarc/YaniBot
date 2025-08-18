@@ -15,20 +15,14 @@ window.ENV = {
     
     // API endpoints
     API_ENDPOINTS: {
+        ROOT: '/',
         STATE: '/state',
         RESET: '/reset',
         HEALTH: '/health',
+        MOVING: '/moving',
+        PAUSE: '/pause',
         INTERPOLATE: '/interpolate',
         EMERGENCY: '/emergency',
-        EMERGENCY_RESET: '/emergency_reset',
-        EMERGENCY_STATUS: '/emergency_status',
-        EMERGENCY_START: '/emergency_start',
-        EMERGENCY_STOP: '/emergency_stop',
-        EMERGENCY_PAUSE: '/emergency_pause',
-        EMERGENCY_RESUME: '/emergency_resume',
-        EMERGENCY_TOGGLE: '/emergency_toggle',
-        EMERGENCY_GET_STATUS: '/emergency_get_status',
-        EMERGENCY_STOP: '/emergency_stop'
     },
     
     // Feature flags
