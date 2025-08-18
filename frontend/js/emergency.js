@@ -120,19 +120,20 @@ class EmergencyManager {
         }
     }
     
-    checkEmergencyZone() {
+    async checkEmergencyZone() {
         // Calculate distance from robot base (0,0,0)
         const distance = Math.sqrt(
             this.movableObject.position.x ** 2 + 
             this.movableObject.position.z ** 2
         );
         
-        const wasInEmergency = this.isEmergencyMode;
-        this.isEmergencyMode = distance <= this.EMERGENCY_RADIUS;
-        
+        let state = await this.api.getState();
+        const prevEmergencyState = state.isEmergencyMode;
+        const currEmergencyState = distance <= this.EMERGENCY_RADIUS;
+
         // Emergency state changed
-        if (this.isEmergencyMode !== wasInEmergency) {
-            if (this.isEmergencyMode) {
+        if (currEmergencyState !== prevEmergencyState) {
+            if (currEmergencyState) {
                 this.activateEmergencyMode();
             } else {
                 this.deactivateEmergencyMode();
