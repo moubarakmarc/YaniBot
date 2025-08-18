@@ -1,2 +1,3 @@
-handle automation status
-allow to move robot in pause
+- handle automation status
+- allow to move robot in pause
+- cleanup whole repo
