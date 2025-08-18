@@ -124,8 +124,9 @@ class UIManager {
     async handleResetScene() {
         try {
             this.showStatus('Resetting scene...', 'info');
+            let state = await this.api.getState();
             // Stop automation if running
-            if (this.automation.isRunning) {
+            if (state.isMoving) {
                 await this.automation.stop();
             }
             // Reset the scene
@@ -195,7 +196,8 @@ class UIManager {
     }
     
     async handleResetRobot() {
-        if (this.automation.isRunning) {
+        let state = await this.api.getState();
+        if (state.isMoving) {
             this.showStatus('Cannot reset: Stop automation first', 'error');
             return;
         }
@@ -213,7 +215,7 @@ class UIManager {
 
     async handleJointSliderChange(jointIndex, angle, valueDisplay) {
         let state = await this.api.getState();
-        if (this.automation.isRunning) {
+        if (state.isMoving) {
             return; // Don't allow manual control during automation
         }
 
@@ -241,9 +243,10 @@ class UIManager {
         }, 150); // 150ms debounce
     }
     
-    handleJointSliderFinalChange(jointIndex, angle) {
+    async handleJointSliderFinalChange(jointIndex, angle) {
         // Final change - send immediately to backend
-        if (!this.automation.isRunning) {
+        let state = await this.api.getState();
+        if (!state.isMoving) {
             this.sendJointAngleToBackend(jointIndex, angle);
         }
     }
@@ -261,10 +264,11 @@ class UIManager {
             console.error('Failed to update backend:', error);
         }
     }
-    
-    handlePageUnload() {
+
+    async handlePageUnload() {
         // Cleanup when page is closing
-        if (this.automation.isRunning) {
+        let state = await this.api.getState();
+        if (state.isMoving) {
             this.automation.stop();
         }
     }
@@ -287,6 +291,7 @@ class UIManager {
         }
     }
     
+    ///////////////// must configure to use state from API
     updateAutomationStatus() {
         let status = 'Stopped';
         let action = 'Waiting...';

@@ -169,27 +169,6 @@ class AutomationManager {
         }
     }
 
-    // check if we can delete this
-    startEmergencyMonitor() {
-        if (this.emergencyMonitorInterval) return;
-        this.emergencyMonitorInterval = setInterval(async () => {
-            let state = await this.api.getState();
-            if (state.isEmergencyMode) {
-                if (!this.isPausedEmergency && this.isRunning) {
-                    this.isPausedEmergency = true;
-                    this.currentAction = 'Paused: Emergency Mode Active';
-                    console.warn('⏸️ Automation paused due to emergency.');
-                }
-            } else {
-                if (this.isPausedEmergency && this.isRunning) {
-                    this.isPausedEmergency = false;
-                    this.currentAction = 'Resumed: Emergency Cleared';
-                    console.info('▶️ Automation resumed after emergency.');
-                }
-            }
-        }, 300); // Check every 300ms
-    }
-
     stopEmergencyMonitor() {
         if (this.emergencyMonitorInterval) {
             clearInterval(this.emergencyMonitorInterval);
