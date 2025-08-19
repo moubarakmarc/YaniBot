@@ -59,12 +59,12 @@ class APIManager {
         return data.steps;
     }
 
-    async check_joint_limits(angles= null, index = null, value = null) {
+    async check_joint_limits(angles) {
         try {
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.LIMITS}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ joint_angles: angles, index: index, value: value })
+                body: JSON.stringify({ joint_angles: angles })
             });
             const data = await response.json();
             if (window.LOG_OPTIONS.jointLimits) console.log('check_joint_limits response:', data);
@@ -76,18 +76,14 @@ class APIManager {
         }
     }
 
-    async setCurrentAngles(angles = null, index = null, value = null) {
+    async setCurrentAngles(angles) {
         try {
             let payload = {};
             if (Array.isArray(angles) && angles.length === 6) {
                 payload.joint_angles = angles;
-            } else if (index !== null && value !== null) {
-                payload.index = index;
-                payload.value = value;
             } else {
-                throw new Error('Provide either 6 joint angles or index and value.');
+                throw new Error('Provide either an array of 6 angles');
             }
-
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.ANGLES}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

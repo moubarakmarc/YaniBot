@@ -47,14 +47,10 @@ class InterpolateRequest(BaseModel):
     target_angles: list[float] = Field(..., min_items=6, max_items=6)
 
 class JointLimitsResponse(BaseModel):
-    joint_angles: Optional[List[float]] = Field(None, min_items=6, max_items=6)
-    value: Optional[float] = None
-    index: Optional[int] = None
+    joint_angles: List[float] = Field(..., min_items=6, max_items=6)
 
 class SetAnglesRequest(BaseModel):
-    joint_angles: Optional[List[float]] = Field(None, min_items=6, max_items=6)
-    value: Optional[float] = None
-    index: Optional[int] = None
+    joint_angles: List[float] = Field(..., min_items=6, max_items=6)
 
 class EmergencyStateRequest(BaseModel):
     is_emergency: bool
@@ -184,22 +180,9 @@ def check_joint_limits(request: JointLimitsResponse):
                         "message": f"Joint angle {i} out of limits: {robot.joint_limits[i]}",
                         "joint_angles": request.joint_angles
                     }
-        elif request.value is not None and request.index is not None:
-            if not (0 <= request.index < 6):
-                raise HTTPException(status_code=400, detail="Index must be between 0 and 5.")
-            if request.value < robot.joint_limits[request.index][0] or request.value > robot.joint_limits[request.index][1]:
-                return {
-                    "success": False,
-                    "message": f"Joint angle {request.index} out of limits: {robot.joint_limits[request.index]}",
-                    "value": request.value,
-                    "index": request.index
-                }
-            robot.currentAngles[request.index] = request.value
         else:
-            raise HTTPException(status_code=400, detail="Provide either joint_angles or value and index.")
-        return {"success": True, "currentAngles": robot.currentAngles}
-    except HTTPException as e:
-        raise e
+            raise HTTPException(status_code=400, detail="Provided empty joint angles.")
+        return {"success": True, "currentAngles": request.joint_angles}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -223,10 +206,6 @@ def set_joint_angles(request: SetAnglesRequest):
             if len(request.joint_angles) != 6:
                 raise HTTPException(status_code=400, detail="Must provide 6 joint angles.")
             robot.currentAngles = request.joint_angles
-        elif request.value is not None and request.index is not None:
-            if not (0 <= request.index < 6):
-                raise HTTPException(status_code=400, detail="Index must be between 0 and 5.")
-            robot.currentAngles[request.index] = request.value
         else:
             raise HTTPException(status_code=400, detail="Provide either joint_angles or value and index.")
         return {"success": True, "currentAngles": robot.currentAngles}
@@ -300,7 +279,7 @@ def set_stop_state(request: StopRequest):
     """
     try:
         robot.isStopped = request.is_stopped
-        return {"success": True, "message": "Robot movement stopped"}
+        return {"success": True, "message": "Robot movement stopped", "isStopped": robot.isStopped}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -318,7 +297,7 @@ def set_pause_state(request: PauseRequest):
     """
     try:
         robot.isPaused = request.is_paused
-        return {"success": True, "message": "Robot movement paused"}
+        return {"success": True, "message": "Robot movement paused", "isPaused": robot.isPaused}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

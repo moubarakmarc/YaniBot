@@ -79,7 +79,7 @@ class RobotManager {
         // Animate through the path
         for (let i = 0; i < path.length; i++) {
             await this.waitWhilePaused();
-            const limitCheck = await this.api.check_joint_limits(path[i], null, null);
+            const limitCheck = await this.api.check_joint_limits(path[i]);
             if (limitCheck && limitCheck.success === false) {
                 console.warn('❌ Joint limit violation detected, stopping animation');
                 this.ui.showStatus(
@@ -91,7 +91,7 @@ class RobotManager {
             await this.api.setMovingState(true);
             this.setJointAngles(path[i]);
             if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
-            await this.api.setCurrentAngles(path[i], null, null);
+            await this.api.setCurrentAngles(path[i]);
             await this.sleep(duration / path.length);
         }
 
