@@ -220,7 +220,7 @@ class UIManager {
         try {
             this.showStatus('Resetting robot...', 'info');
             let resetData = await this.api.reset();
-            await this.robot.moveTo(resetData.current_angles, resetData.target_angles, 1000);
+            await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);

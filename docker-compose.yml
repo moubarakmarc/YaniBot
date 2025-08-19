@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: backend.Dockerfile
+    image: yanibot-backend:latest
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
@@ -48,6 +49,7 @@ services:
     build:
       context: .
       dockerfile: backend.Dockerfile
+    image: yanibot-backend:latest
     command: ["pytest", "tests/", "-v", "--tb=short"]
     volumes:
       - ./backend:/app

@@ -46,8 +46,8 @@ class APIManager {
 
     async getInterpolatedPath(startAngles = null, targetAngles, steps = 20) {
         const payload = startAngles
-            ? { start_angles: startAngles, target_angles: targetAngles }
-            : { target_angles: targetAngles };
+            ? { startAngles: startAngles, targetAngles: targetAngles }
+            : { targetAngles: targetAngles };
         const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.INTERPOLATE}?steps=${steps}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -90,7 +90,7 @@ class APIManager {
                 body: JSON.stringify(payload)
             });
             const data = await response.json();
-            if (window.LOG_OPTIONS.currentAngles) console.log('current_angles response:', data);
+            if (window.LOG_OPTIONS.currentAngles) console.log('currentAngles response:', data);
             if (!response.ok) throw new Error('Failed to set joint angles');
             return data;
         } catch (error) {

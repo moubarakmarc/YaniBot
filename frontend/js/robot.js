@@ -46,20 +46,24 @@ class RobotManager {
     // Movement Methods
     async moveSingleJoint(jointIndex, value, duration = 2000) {
         let state = await this.api.getState();
-        const current_angles = state.currentAngles;
-        const target_angles = [...current_angles];
-        target_angles[jointIndex] = value;
-        await this.moveTo(current_angles, target_angles, duration);
+        const currentAngles = state.currentAngles;
+        const targetAngles = [...currentAngles];
+        targetAngles[jointIndex] = value;
+        await this.moveTo(currentAngles, targetAngles, duration);
     }
 
-    async moveTo(start_angles, target_angles, duration = 2000) {
+    async moveTo(startAngles = null, targetAngles, duration = 2000) {
         while (this.isMoving) {
             console.warn('Robot is already moving, ignoring new command');
             await this.sleep(50);
         }
         
         try {
-            const path = await this.api.getInterpolatedPath(start_angles, target_angles, 30);
+            if (startAngles === null) {
+                let state = await this.api.getState();
+                startAngles = state.currentAngles;
+            }
+            const path = await this.api.getInterpolatedPath(startAngles, targetAngles, 30);
             
             // Animate visual robot
             await this.animateToPosition(path, duration);
