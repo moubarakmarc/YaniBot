@@ -1,28 +1,32 @@
 // ui.js - Complete UI controls and events management
 class UIManager {
-    constructor(robotManager, automationManager) {
+    constructor(robotManager, automationManager, emergencyManager = null) {
         this.robot = robotManager;
         this.automation = automationManager;
+        this.emergencyManager = emergencyManager;
         this.elements = {};
-        this.sliderDebounceTimers = {};
+        this.inputDebounceTimers = {};
+        this.api = null; 
     }
     
     init() {
         this.cacheElements();
         this.bindEvents();
-        this.updateDisplay();
-        this.initJointSliders();
+        this.initJointInputs();
         console.log("✅ UI Manager initialized");
     }
     
     cacheElements() {
         this.elements = {
+            resetSceneBtn: document.getElementById('resetScene'),
+            
             // Automation controls
             startBtn: document.getElementById('startAutomation'),
             stopBtn: document.getElementById('stopAutomation'),
             pauseBtn: document.getElementById('pauseAutomation'),
-            resetBtn: document.getElementById('resetJoints'),
-            
+            resumeBtn: document.getElementById('resumeAutomation'),
+            strategySelect: document.getElementById('automation-strategy'),
+
             // Status displays
             leftBinCount: document.getElementById('left-bin-count'),
             rightBinCount: document.getElementById('right-bin-count'),
@@ -31,78 +35,146 @@ class UIManager {
             currentAction: document.getElementById('current-action'),
             
             // Joint controls
-            jointSliders: {},
+            manualJointControl: document.getElementById('manual-override'),
+            jointInputs: {},
             jointValues: {},
+            resetJointsBtn: document.getElementById('resetJoints'),
+
+            // Emergency controls
+            emergencyStopBtn: document.getElementById('emergencyStop'),
             
-            // Other controls
-            toggleAxesBtn: document.getElementById('toggleAxes'),
-            testMovementBtn: document.getElementById('testMovement'),
-            emergencyStopBtn: document.getElementById('emergencyStop')
+            // Log Controls
+            logControls: document.getElementById('log-controls'),
+            logDropdownBtn: document.getElementById('logDropdownBtn'),
+        };
+        // Cache joint input and value elements
+        this.elements.jointInputs = {
+            a1: document.getElementById('a1-input'),
+            a2: document.getElementById('a2-input'),
+            a3: document.getElementById('a3-input'),
+            a4: document.getElementById('a4-input'),
+            a5: document.getElementById('a5-input'),
+            a6: document.getElementById('a6-input'),
+        };
+        this.elements.jointValues = {
+            a1: document.getElementById('a1-value'),
+            a2: document.getElementById('a2-value'),
+            a3: document.getElementById('a3-value'),
+            a4: document.getElementById('a4-value'),
+            a5: document.getElementById('a5-value'),
+            a6: document.getElementById('a6-value'),
         };
         
-        // Cache joint sliders and value displays
-        for (let i = 1; i <= 6; i++) {
-            this.elements.jointSliders[`a${i}`] = document.getElementById(`a${i}-slider`);
-            this.elements.jointValues[`a${i}`] = document.getElementById(`a${i}-value`);
-        }
-        
         console.log("🗂️ UI Elements cached");
+        
+        
     }
     
     bindEvents() {
         // Automation control events
+        this.elements.resetSceneBtn?.addEventListener('click', () => this.handleResetScene());
         this.elements.startBtn?.addEventListener('click', () => this.handleStartAutomation());
         this.elements.stopBtn?.addEventListener('click', () => this.handleStopAutomation());
         this.elements.pauseBtn?.addEventListener('click', () => this.handlePauseAutomation());
-        this.elements.resetBtn?.addEventListener('click', () => this.handleResetRobot());
-        
+        this.elements.resumeBtn?.addEventListener('click', () => this.handleResumeAutomation());
+        this.elements.resetJointsBtn?.addEventListener('click', () => this.handleResetJoints());
+
         // Utility control events
-        this.elements.toggleAxesBtn?.addEventListener('click', () => this.handleToggleAxes());
-        this.elements.testMovementBtn?.addEventListener('click', () => this.handleTestMovement());
-        this.elements.emergencyStopBtn?.addEventListener('click', () => this.handleEmergencyStop());
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        this.elements.emergencyStopBtn?.addEventListener('click', () => this.emergencyManager?.activateEmergencyMode());
         
         // Window events
         window.addEventListener('beforeunload', () => this.handlePageUnload());
         
+        const resumeEbtn = document.getElementById('resumeEmergency');
+        if (resumeEbtn) {
+            resumeEbtn.addEventListener('click', () => this.emergencyManager?.deactivateEmergencyMode());
+        }
+
+        // Strategy selection event
+        this.elements.strategySelect?.addEventListener('change', (e) => {
+            this.automation.strategy = e.target.value;
+            console.log(`Automation strategy set to: ${this.automation.strategy}`);
+        });
+
+        // Log controls
+        this.elements.logDropdownBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.elements.logControls?.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!this.elements.logControls.classList.contains('open')) {
+                this.elements.logControls?.classList.remove('open');
+            }
+        });
+
+        // Joint controls
+        Object.entries(this.elements.jointInputs).forEach(([jointKey, inputEl], idx) => {
+            inputEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    let value = parseFloat(inputEl.value);
+                    const min = parseFloat(inputEl.min);
+                    const max = parseFloat(inputEl.max);
+                    value = Math.max(min, Math.min(max, value));
+                    inputEl.value = value; // Clamp value in input
+                    // Update the value display immediately
+                    const valueDisplay = this.elements.jointValues[jointKey];
+                    if (valueDisplay) valueDisplay.textContent = `${Math.round(value)}°`;
+                    // Move the robot and send to backend
+                    this.handleJointInputChange(idx, value, valueDisplay);
+                }
+            });
+        });
+
+
         console.log("🔗 UI Events bound");
     }
-    
-    initJointSliders() {
+
+    initJointInputs() {
         const joints = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
         
         joints.forEach((joint, index) => {
-            const slider = this.elements.jointSliders[joint];
+            const input = this.elements.jointInputs[joint];
             const valueDisplay = this.elements.jointValues[joint];
-            
-            if (slider && valueDisplay) {
-                slider.addEventListener('input', (e) => {
-                    this.handleJointSliderChange(index, parseFloat(e.target.value), valueDisplay);
-                });
-                
-                slider.addEventListener('change', (e) => {
-                    this.handleJointSliderFinalChange(index, parseFloat(e.target.value));
-                });
-            }
         });
-        
-        console.log("🎚️ Joint sliders initialized");
+
+        console.log("🎚️ Joint Inputs initialized");
     }
     
     // Event Handlers
+    async handleResetScene() {
+        try {
+            this.showStatus('Resetting scene...', 'info');
+            let state = await this.api.getState();
+            // Stop automation if running
+            if (state.isMoving) {
+                await this.automation.stop();
+            }
+            // Reset the scene
+            if (this.robot && this.robot.scene && this.robot.scene.reset) {
+                await this.robot.scene.reset();
+            } else {
+                // Fallback: reload the page
+                location.reload();
+            }
+            this.showStatus('Scene reset!', 'success');
+        } catch (error) {
+            console.error('Failed to reset scene:', error);
+            this.showStatus(`Failed to reset scene: ${error.message}`, 'error');
+        }
+    }
+    
     async handleStartAutomation() {
         try {
             this.showStatus('Starting automation...', 'info');
             await this.automation.start();
-            this.updateAutomationButtons(true);
-            this.toggleManualControls(false);
-            this.showStatus('Automation started successfully', 'success');
+            this.updateAutomationButtons();
+            this.toggleOverrideControls();
+            this.showStatus('Automation Starting...', 'success');
         } catch (error) {
             console.error('Failed to start automation:', error);
             this.showStatus(`Failed to start: ${error.message}`, 'error');
-            this.updateAutomationButtons(false);
+            this.updateAutomationButtons();
         }
     }
     
@@ -110,8 +182,8 @@ class UIManager {
         try {
             this.showStatus('Stopping automation...', 'info');
             await this.automation.stop();
-            this.updateAutomationButtons(false);
-            this.toggleManualControls(true);
+            this.updateAutomationButtons();
+            this.toggleOverrideControls();
             this.showStatus('Automation stopped', 'warning');
         } catch (error) {
             console.error('Failed to stop automation:', error);
@@ -121,185 +193,75 @@ class UIManager {
     
     async handlePauseAutomation() {
         try {
-            const wasPaused = this.automation.isPaused;
-            await this.automation.togglePause();
+            await this.api.setPauseState(true);
+            await this.api.setMovingState(false);
+            this.updatePauseResumeButtons();
+            this.toggleOverrideControls();
+            this.showStatus('Automation paused', 'success');
             
-            if (wasPaused) {
-                this.showStatus('Automation resumed', 'success');
-                if (this.elements.pauseBtn) {
-                    this.elements.pauseBtn.textContent = '⏸️ Pause';
-                }
-            } else {
-                this.showStatus('Automation paused', 'warning');
-                if (this.elements.pauseBtn) {
-                    this.elements.pauseBtn.textContent = '▶️ Resume';
-                }
-            }
         } catch (error) {
             console.error('Failed to pause/resume automation:', error);
             this.showStatus(`Failed to pause/resume: ${error.message}`, 'error');
         }
     }
-    
-    async handleResetRobot() {
-        if (this.automation.isRunning) {
-            this.showStatus('Cannot reset: Stop automation first', 'error');
-            return;
+
+    async handleResumeAutomation() {
+        try {
+            await this.api.setPauseState(false);
+            this.updatePauseResumeButtons();
+            this.showStatus('Automation resumed', 'success');
+        } catch (error) {
+            console.error('Failed to resume automation:', error);
+            this.showStatus(`Failed to resume: ${error.message}`, 'error');
         }
-        
+    }
+    
+    async handleResetJoints() {
         try {
             this.showStatus('Resetting robot...', 'info');
-            await this.robot.reset([0, 0, 0, 0, 0, 0]);
-            this.updateJointDisplays([0, 0, 0, 0, 0, 0]);
+            let resetData = await this.api.reset();
+            await this.robot.moveTo(resetData.current_angles, resetData.target_angles, 1000);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);
             this.showStatus(`Failed to reset: ${error.message}`, 'error');
         }
     }
-    
-    handleToggleAxes() {
-        if (this.robot.scene && this.robot.scene.toggleAxes) {
-            this.robot.scene.toggleAxes();
-            const button = this.elements.toggleAxesBtn;
-            if (button) {
-                const isVisible = this.robot.scene.axesVisible;
-                button.textContent = isVisible ? 'Hide Axes' : 'Show Axes';
-            }
-        }
-    }
-    
-    async handleTestMovement() {
-        if (this.automation.isRunning) {
-            this.showStatus('Cannot test: Stop automation first', 'error');
+
+    async handleJointInputChange(jointIndex, angle, valueDisplay) {
+        let state = await this.api.getState();
+
+        if (state.isEmergencyMode) {
+            this.showStatus('Robot is in emergency stop! Clear emergency before moving joints.', 'error');
             return;
         }
-        
-        try {
-            this.showStatus('Testing robot movement...', 'info');
-            await this.robot.testMovement();
-            this.showStatus('Movement test completed', 'success');
-        } catch (error) {
-            console.error('Movement test failed:', error);
-            this.showStatus(`Movement test failed: ${error.message}`, 'error');
-        }
-    }
-    
-    async handleEmergencyStop() {
-        try {
-            this.showStatus('EMERGENCY STOP ACTIVATED', 'error');
-            await this.automation.emergencyStop();
-            this.updateAutomationButtons(false);
-            this.toggleManualControls(true);
-            
-            // Visual indication
-            document.body.style.backgroundColor = '#ffebee';
-            setTimeout(() => {
-                document.body.style.backgroundColor = '';
-            }, 2000);
-            
-        } catch (error) {
-            console.error('Emergency stop failed:', error);
-        }
-    }
-    
-    handleJointSliderChange(jointIndex, angle, valueDisplay) {
-        if (this.automation.isRunning) {
-            return; // Don't allow manual control during automation
-        }
-        
+
         // Update display immediately for responsiveness
         valueDisplay.textContent = `${Math.round(angle)}°`;
         
         // Update visual robot immediately
-        if (this.robot.updateJointRotation) {
-            this.robot.updateJointRotation(jointIndex, angle);
-        }
+        this.robot.moveSingleJoint(jointIndex, angle);
         
         // Clear existing debounce timer
-        if (this.sliderDebounceTimers[jointIndex]) {
-            clearTimeout(this.sliderDebounceTimers[jointIndex]);
+        if (this.inputDebounceTimers[jointIndex]) {
+            clearTimeout(this.inputDebounceTimers[jointIndex]);
         }
         
         // Set new debounce timer for backend update
-        this.sliderDebounceTimers[jointIndex] = setTimeout(() => {
-            this.sendJointAngleToBackend(jointIndex, angle);
-        }, 150); // 150ms debounce
+        this.inputDebounceTimers[jointIndex] = setTimeout(async () => {}, 3000); // 3000ms debounce
     }
-    
-    handleJointSliderFinalChange(jointIndex, angle) {
-        // Final change - send immediately to backend
-        if (!this.automation.isRunning) {
-            this.sendJointAngleToBackend(jointIndex, angle);
-        }
-    }
-    
-    async sendJointAngleToBackend(jointIndex, angle) {
-        try {
-            // Update robot's current angles
-            if (this.robot.currentAngles) {
-                this.robot.currentAngles[jointIndex] = angle;
-                
-                // Send full joint state to backend
-                await this.robot.sendToBackend(this.robot.currentAngles);
-            }
-        } catch (error) {
-            console.error('Failed to update backend:', error);
-        }
-    }
-    
-    handleKeyboard(event) {
-        // Keyboard shortcuts
-        if (event.ctrlKey || event.metaKey) {
-            switch (event.key.toLowerCase()) {
-                case 's':
-                    event.preventDefault();
-                    if (this.automation.isRunning) {
-                        this.handleStopAutomation();
-                    } else {
-                        this.handleStartAutomation();
-                    }
-                    break;
-                case 'p':
-                    event.preventDefault();
-                    this.handlePauseAutomation();
-                    break;
-                case 'r':
-                    event.preventDefault();
-                    this.handleResetRobot();
-                    break;
-                case 'e':
-                    event.preventDefault();
-                    this.handleEmergencyStop();
-                    break;
-            }
-        }
-        
-        // Escape key for emergency stop
-        if (event.key === 'Escape') {
-            this.handleEmergencyStop();
-        }
-    }
-    
-    handlePageUnload() {
+
+    async handlePageUnload() {
         // Cleanup when page is closing
-        if (this.automation.isRunning) {
+        let state = await this.api.getState();
+        if (state.isMoving) {
             this.automation.stop();
         }
     }
     
-    // UI Update Methods
-    updateDisplay() {
-        this.updateBinCounts();
-        this.updateCycleCount();
-        this.updateAutomationStatus();
-        this.updateAutomationButtons(this.automation.isRunning);
-        this.updateJointDisplays(this.robot.currentAngles || [0, 0, 0, 0, 0, 0]);
-    }
-    
     updateBinCounts() {
         if (this.automation.binManager) {
-            const counts = this.automation.binManager.getCounts();
+            const counts = this.automation.binManager.getBinCounts();
             if (this.elements.leftBinCount) {
                 this.elements.leftBinCount.textContent = counts.left;
             }
@@ -315,12 +277,13 @@ class UIManager {
         }
     }
     
+    ///////////////// must configure to use state from API
     updateAutomationStatus() {
         let status = 'Stopped';
         let action = 'Waiting...';
         
         if (this.automation.isRunning) {
-            status = this.automation.isPaused ? 'Paused' : 'Running';
+            status = this.automation.isPausedUser ? 'Paused' : 'Running';
             action = this.automation.currentAction || 'Processing...';
         }
         
@@ -331,60 +294,54 @@ class UIManager {
             this.elements.currentAction.textContent = action;
         }
     }
-    
-    updateAutomationButtons(isRunning) {
-        if (this.elements.startBtn) {
-            this.elements.startBtn.disabled = isRunning;
-        }
-        if (this.elements.stopBtn) {
-            this.elements.stopBtn.disabled = !isRunning;
-        }
-        if (this.elements.pauseBtn) {
-            this.elements.pauseBtn.disabled = !isRunning;
-        }
-    }
-    
+
     updateJointDisplays(angles) {
         for (let i = 0; i < angles.length && i < 6; i++) {
-            const slider = this.elements.jointSliders[`a${i + 1}`];
             const valueDisplay = this.elements.jointValues[`a${i + 1}`];
-            
-            if (slider) {
-                slider.value = Math.round(angles[i]);
-            }
+
             if (valueDisplay) {
                 valueDisplay.textContent = `${Math.round(angles[i])}°`;
             }
         }
     }
-    
-    toggleManualControls(enabled) {
-        // Toggle joint sliders
-        Object.values(this.elements.jointSliders).forEach(slider => {
-            if (slider) {
-                slider.disabled = !enabled;
-            }
-        });
-        
-        // Toggle manual control buttons
-        if (this.elements.resetBtn) {
-            this.elements.resetBtn.disabled = !enabled;
-        }
-        if (this.elements.testMovementBtn) {
-            this.elements.testMovementBtn.disabled = !enabled;
-        }
-        
-        // Update manual override section styling
-        const manualSection = document.getElementById('manual-override');
-        if (manualSection) {
-            if (enabled) {
-                manualSection.classList.remove('disabled');
-            } else {
-                manualSection.classList.add('disabled');
-            }
+
+    async updateAutomationButtons() {
+        let state = await this.api.getState();
+        this.elements.startBtn.disabled = state.isMoving;
+        this.elements.stopBtn.disabled = !state.isMoving;
+        this.updatePauseResumeButtons();
+    }
+
+    async updatePauseResumeButtons() {
+        let state = await this.api.getState();
+        if (state.isPaused) {
+            // Show Resume, hide Pause
+            this.elements.pauseBtn.style.display = 'none';
+            this.elements.resumeBtn.style.display = '';
+            this.elements.resumeBtn.disabled = false;
+        } else if (!state.isPaused && state.isMoving) {
+            // Show Pause, hide Resume
+            this.elements.pauseBtn.style.display = '';
+            this.elements.resumeBtn.style.display = 'none';
+            this.elements.pauseBtn.disabled = false;
+        } else if (!state.isMoving) {
+            // Show Disabled Pause and hide Resume
+            this.elements.pauseBtn.style.display = '';
+            this.elements.resumeBtn.style.display = 'none';
+            this.elements.pauseBtn.disabled = true;
+            this.elements.resumeBtn.disabled = true;
         }
     }
-    
+
+    async toggleOverrideControls() {
+        let state = await this.api.getState();
+        if (state.isMoving) {
+            this.elements.manualJointControl.classList.add('disabled');
+        } else {
+            this.elements.manualJointControl.classList.remove('disabled');
+        }
+    }
+
     showStatus(message, type = 'info') {
         console.log(`${type.toUpperCase()}: ${message}`);
         
@@ -444,32 +401,7 @@ class UIManager {
             }, 300);
         }, 3000);
     }
-    
-    // Public methods for external updates
-    setAutomationStatus(status, action) {
-        if (this.elements.automationStatus) {
-            this.elements.automationStatus.textContent = status;
-        }
-        if (this.elements.currentAction) {
-            this.elements.currentAction.textContent = action;
-        }
-    }
-    
-    incrementCycleCount() {
-        const current = parseInt(this.elements.cycleCount?.textContent || '0');
-        if (this.elements.cycleCount) {
-            this.elements.cycleCount.textContent = current + 1;
-        }
-    }
-    
-    setBinCounts(leftCount, rightCount) {
-        if (this.elements.leftBinCount) {
-            this.elements.leftBinCount.textContent = leftCount;
-        }
-        if (this.elements.rightBinCount) {
-            this.elements.rightBinCount.textContent = rightCount;
-        }
-    }
+
 }
 
 // Make class globally available

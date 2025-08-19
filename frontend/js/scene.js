@@ -6,11 +6,7 @@ class SceneManager {
         this.renderer = null;
         this.workstation = null;
         this.controls = null;
-        this.axesHelpers = [];
         this.axesVisible = true;
-
-        // Don't initialize here - wait for init() method
-        console.log("🏗️ SceneManager constructor called");
     }
     
     async init() {
@@ -20,7 +16,6 @@ class SceneManager {
         this.createLighting();
         this.createGround();
         this.createWorkspace();
-        this.createAxesHelpers();
         this.setupControls();
         this.startRenderLoop();
         
@@ -143,15 +138,6 @@ class SceneManager {
         console.log("🏭 Workspace created");
     }
     
-    createAxesHelpers() {
-        // Global axes at origin
-        const globalAxes = new THREE.AxesHelper(2);
-        this.scene.add(globalAxes);
-        this.axesHelpers.push(globalAxes);
-        
-        console.log("🎯 Axes helpers created");
-    }
-    
     setupControls() {
         // Temporarily disable OrbitControls - set to false to use manual controls
         const useOrbitControls = false;
@@ -233,19 +219,11 @@ class SceneManager {
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
-    
-    toggleAxes() {
-        this.axesVisible = !this.axesVisible;
-        this.axesHelpers.forEach(helper => {
-            helper.visible = this.axesVisible;
-        });
-    }
-    
-    addAxesHelper(object, size = 1) {
-        const axes = new THREE.AxesHelper(size);
-        object.add(axes);
-        this.axesHelpers.push(axes);
-        return axes;
+
+    reset() {
+        // Reset the scene to its initial state
+        location.reload();
+        console.log("🔄 Scene reset");
     }
 }
 
@@ -254,20 +232,28 @@ class WorkstationManager {
         const workstationGroup = new THREE.Group();
         
         // Left table (input station)
-        const leftTable = this.createTable(-3, 2, 0x8B4513);
+        const leftTable = this.createTable(-1, 1, 0x8B4513);
         workstationGroup.add(leftTable);
         
         // Right table (output station)
-        const rightTable = this.createTable(3, 2, 0x8B4513);
+        const rightTable = this.createTable(1, 1, 0x8B4513);
         workstationGroup.add(rightTable);
         
         // Left bin (input bin - blue)
-        const leftBin = this.createBin(-3, 2, 0x4169E1);
+        const leftBin = this.createBin(-1, 1, 0x4169E1);
         workstationGroup.add(leftBin);
         
         // Right bin (output bin - green)
-        const rightBin = this.createBin(3, 2, 0x228B22);
+        const rightBin = this.createBin(1, 1, 0x228B22);
         workstationGroup.add(rightBin);
+        
+        // Add lidar sensors next to robot base
+        const lidars = this.createLidarSensors();
+        workstationGroup.add(lidars);
+        
+        // Add red circle around robot base (3m radius)
+        const robotWorkspace = this.createRobotWorkspaceCircle();
+        workstationGroup.add(robotWorkspace);
         
         return workstationGroup;
     }
@@ -358,6 +344,85 @@ class WorkstationManager {
         binGroup.position.set(x, 0.85, z);
         
         return binGroup;
+    }
+    
+    createLidarSensors() {
+        const lidarGroup = new THREE.Group();
+        
+        // Lidar sensor geometry (small black cylinders)
+        const lidarGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.15, 16);
+        const lidarMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        
+        // Left lidar sensor
+        const leftLidar = new THREE.Mesh(lidarGeometry, lidarMaterial);
+        leftLidar.position.set(-0.4, 0.075, -0.3); // Left side of robot base
+        leftLidar.castShadow = true;
+        leftLidar.receiveShadow = true;
+        leftLidar.name = "LeftLidar";
+        lidarGroup.add(leftLidar);
+        
+        // Right lidar sensor
+        const rightLidar = new THREE.Mesh(lidarGeometry, lidarMaterial);
+        rightLidar.position.set(0.4, 0.075, -0.3); // Right side of robot base
+        rightLidar.castShadow = true;
+        rightLidar.receiveShadow = true;
+        rightLidar.name = "RightLidar";
+        lidarGroup.add(rightLidar);
+        
+        // Optional: Add lidar mounting plates
+        const plateGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.02, 16);
+        const plateMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x333333, // Dark gray
+            metalness: 0.5,
+            roughness: 0.7
+        });
+        
+        // Left mounting plate
+        const leftPlate = new THREE.Mesh(plateGeometry, plateMaterial);
+        leftPlate.position.set(-0.4, 0.01, -0.3);
+        leftPlate.name = "LeftLidarPlate";
+        lidarGroup.add(leftPlate);
+        
+        // Right mounting plate
+        const rightPlate = new THREE.Mesh(plateGeometry, plateMaterial);
+        rightPlate.position.set(0.4, 0.01, -0.3);
+        rightPlate.name = "RightLidarPlate";
+        lidarGroup.add(rightPlate);
+        
+        console.log("📡 Lidar sensors created at robot base");
+        
+        return lidarGroup;
+    }
+    
+    createRobotWorkspaceCircle() {
+        const circleGroup = new THREE.Group();
+        
+        // Create red circle with 3-meter radius
+        const circleGeometry = new THREE.RingGeometry(2.95, 3.0, 64); // Inner radius 2.95, outer 3.0 for thin line
+        const circleMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF0000, // Red
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+        circle.rotation.x = -Math.PI / 2; // Rotate to lie flat on ground
+        circle.position.set(0, 0.005, 0); // Slightly above ground to avoid z-fighting
+        circle.name = "RobotWorkspaceCircle";
+        circleGroup.add(circle);
+        
+        // Optional: Add text label
+        const loader = new THREE.FontLoader();
+        // Note: You'd need to load a font for text. For now, just the circle.
+        
+        console.log("🔴 Robot workspace circle created (3m radius)");
+        
+        return circleGroup;
     }
 }
 
