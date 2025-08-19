@@ -40,5 +40,4 @@ jobs:
 
     - name: Run tests
       run: |
-        cd backend
-        pytest --maxfail=1 --disable-warnings -v
+        pytest backend/tests --maxfail=1 --disable-warnings -v
