@@ -3,15 +3,15 @@ let robot; // Make robot accessible
 
 // Initialize global app object
 window.LOG_OPTIONS = {
-    state: false,
-    reset: false,
-    interpolatedPath: false,
-    jointLimits: false,
-    movingState: false,
-    currentAngles: false,
-    stopState: false,
-    pauseState: false,
-    emergencyState: false
+    state: true,
+    reset: true,
+    interpolatedPath: true,
+    jointLimits: true,
+    movingState: true,
+    currentAngles: true,
+    stopState: true,
+    pauseState: true,
+    emergencyState: true
 };
 
 // Update loading status if available

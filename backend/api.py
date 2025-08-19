@@ -271,9 +271,12 @@ def interpolate_path_to_move(request: InterpolateRequest, steps: int = 20):
         # Calculate the maximum absolute difference between any joint
         diffs = [abs(a - b) for a, b in zip(request.start_angles, request.target_angles)]
         max_diff = max(diffs)
-        # If the largest difference is very small, reduce steps
-        if max_diff < 5.0:
-            steps = 2
+        min_steps = 2
+        scale = 2 / 2  # 2 steps per 2 degrees
+        if max_diff < 20:
+            steps = 30  # Use your specific number for small moves
+        else:
+            steps = max(min_steps, int(scale * max_diff))
         path = list(interpolate_path(request.start_angles, request.target_angles, steps=steps))
         return {
             "success": True,

@@ -1,1 +1,0 @@
-allow bigger sliders but when the user reaches the limit throw a warning and stop it
