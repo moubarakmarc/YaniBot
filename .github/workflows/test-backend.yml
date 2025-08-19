@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  test:
+  backend-tests:
     runs-on: ubuntu-latest
 
     services:
@@ -40,4 +40,5 @@ jobs:
 
     - name: Run tests
       run: |
+        export PYTHONPATH=backend
         pytest backend/tests --maxfail=1 --disable-warnings -v
