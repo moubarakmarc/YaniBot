@@ -1,13 +1,18 @@
-// main.js - Clean entry point
-console.log("🔥 YaniBot Loading...");
-console.log("🔍 Class check:");
-console.log("- SceneManager:", typeof SceneManager);
-console.log("- RobotManager:", typeof RobotManager);
-console.log("- AutomationManager:", typeof AutomationManager);
-console.log("- UIManager:", typeof UIManager);
-
 let app = {};
 let robot; // Make robot accessible
+
+// Initialize global app object
+window.LOG_OPTIONS = {
+    state: true,
+    reset: true,
+    interpolatedPath: true,
+    jointLimits: true,
+    movingState: true,
+    currentAngles: true,
+    stopState: true,
+    pauseState: true,
+    emergencyState: true
+};
 
 // Update loading status if available
 function updateLoadingStatus(message) {
@@ -60,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateLoadingStatus("Building robot model...");
             
             // Initialize robot with the scene
-            app.robot = new RobotManager(app.scene);
+            app.robot = new RobotManager(app.scene, RobotBuilder);
             await app.robot.init();
             robot = app.robot; // Make robot globally accessible
             window.robot = robot; // For debugging
@@ -77,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             app.ui = new UIManager(app.robot, app.automation);
             app.ui.init()
             app.automation.ui = app.ui; // Pass UI to automation manager
+            app.robot.ui = app.ui; // Pass UI to robot
             
             // Then initialize emergency system with UI reference
             if (typeof EmergencyManager !== 'undefined') {
@@ -91,15 +97,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.warn("⚠️ EmergencyManager not available - skipping emergency system");
                 app.emergency = null;
             }
-            
-            // Update UI manager with emergency reference
+
+            // Update UI manager and AutomationManager with emergency reference
             app.ui.emergencyManager = app.emergency;
-            
+            app.automation.emergencyManager = app.emergency;
+
             updateLoadingStatus("Connecting to backend...");
             
-            // Initialize API (optional - can fail gracefully)
+            // Initialize API
             try {
                 app.api = new APIManager();
+                app.robot.api = app.api; // Pass API to robot manager
+                app.automation.api = app.api; // Pass API to automation manager
+                app.ui.api = app.api; // Pass API to UI manager
+                app.emergency.api = app.api; // Pass API to emergency manager if available
+                
+                // Initialize API manager
+                await app.api.init();
                 console.log("✅ API Manager initialized");
             } catch (apiError) {
                 console.warn("⚠️ API Manager failed to initialize:", apiError);
@@ -114,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 robot: !!app.robot,
                 automation: !!app.automation,
                 ui: !!app.ui,
+                emergency: !!app.emergency,
                 api: !!app.api
             });
             
@@ -170,6 +185,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Start initialization
     initYaniBot();
+    
+    // === Log Options Checkbox Sync ===
+    [
+        'state', 'reset', 'interpolatedPath', 'jointLimits',
+        'movingState', 'currentAngles', 'stopState', 'pauseState', 'emergencyState'
+    ].forEach(key => {
+        const checkbox = document.getElementById('log' + key.charAt(0).toUpperCase() + key.slice(1));
+        if (checkbox) {
+            checkbox.onchange = function(e) {
+                window.LOG_OPTIONS[key] = e.target.checked;
+            };
+        }
+    });
 
 });
 

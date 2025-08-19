@@ -1,17 +1,18 @@
 // automation.js - Clean automation manager for YaniBot
 
 class AutomationManager {
-    constructor(robotManager) {
+    constructor(robotManager, emergencyManager = null) {
         this.robot = robotManager;
         this.binManager = new BinManager(robotManager.scene);
         this.cycleCount = 0;
-        this.isRunning = false;
-        this.isPaused = false;
+        this.emergencyManager = emergencyManager;
+        this.emergencyMonitorInterval = null; // For emergency monitoring
         this.currentlyHeldObject = null;
         this.currentAction = 'Ready';
         this.cycleDelay = 2000;
         this.automationInterval = null;
-        this.strategy = 'left-to-right'; // or 'right-to-left', 'bidirectional'
+        this.strategy = 'left-to-right'; // Default strategy
+        this.api = null; // Will be set by APIManager
     }
 
     async init() {
@@ -20,57 +21,64 @@ class AutomationManager {
     }
 
     async start() {
-        if (this.isRunning) return;
+        // disable start automation after first click
         if (this.binManager.isEmpty()) throw new Error('No objects to move - reset the scene first');
-        this.isRunning = true;
-        this.isPaused = false;
+        await this.api.setMovingState(true);
         this.cycleCount = 0;
-        this.automationLoop();
+        this.automationLoopPromise = this.automationLoop();
     }
 
     async stop() {
-        this.isRunning = false;
-        this.isPaused = false;
+        await this.api.setStopState(true);
+        if (this.automationLoopPromise) {
+            await this.automationLoopPromise;
+            this.automationLoopPromise = null;
+        }        
         if (this.automationInterval) clearTimeout(this.automationInterval);
-        if (this.currentlyHeldObject) {
-            this.binManager.dropObject(this.currentlyHeldObject, 'left');
-            this.currentlyHeldObject = null;
-        }
-        await this.robot.moveTo(this.robot.positions.home, 2000);
+        this.api.setMovingState(false);
+        this.api.setStopState(false);
         this.currentAction = 'Stopped';
+        this.stopEmergencyMonitor();
         console.log('✅ Automation stopped');
     }
 
     async automationLoop() {
-        try {
-            while (this.isRunning && !this.isPaused) {
-                if (this.binManager.isEmpty()) {
-                    this.currentAction = 'Completed - All objects transferred!';
-                    await this.stop();
-                    break;
-                }
-                await this.performCycle();
-                if (this.isRunning && !this.isPaused) {
-                    this.currentAction = `Waiting ${this.cycleDelay / 1000}s before next cycle...`;
-                    this.automationInterval = setTimeout(() => {
-                        if (this.isRunning && !this.isPaused) this.automationLoop();
-                    }, this.cycleDelay);
-                    break;
-                }
+        let state = await this.api.getState();
+        while (state.isMoving && !state.isStopped) {
+            try {
+                const shouldContinue = await this.performCycle();
+                if (!shouldContinue) break; // Stop loop if bins are empty
+                await this.sleep(this.cycleDelay);
+                state = await this.api.getState(); // Update state
+            } catch (error) {
+                console.error('Automation error:', error);
+                this.api.setMovingState(false);
+                break;
             }
-        } catch (error) {
-            console.error('💥 Automation error:', error);
-            this.currentAction = `Error: ${error.message}`;
-            await this.stop();
         }
     }
 
     async performCycle() {
         this.cycleCount++;
         const { sourceBin, targetBin } = this.binManager.getTransferPair(this.strategy);
-        if (!sourceBin || !targetBin) throw new Error('No valid transfer pair available');
+
+        // Check if source bin is empty
+        if (!sourceBin || this.binManager.isEmpty(sourceBin)) {
+            console.log('🚫 No valid transfer pair available. Stopping automation.');
+            this.ui.showStatus('Automation stopped: No objects left to move', 'warning');
+            this.api.setMovingState(false);
+            this.currentAction = 'Stopped: No objects left to move';
+            if (this.ui && this.ui.updateAutomationStatus) this.ui.updateAutomationStatus();
+            return false;
+        }
         await this.pickAndPlace(sourceBin, targetBin);
+        
+        // Update cycle count in UI after each cycle
+        if (this.ui && this.ui.updateCycleCount) {
+            this.ui.updateCycleCount();
+        }
         console.log(`✅ Cycle ${this.cycleCount} completed`);
+        return true;
     }
 
     async pickAndPlace(sourceBin, targetBin) {
@@ -84,25 +92,19 @@ class AutomationManager {
             const dropLiftPos = this.robot.positions[`${targetBin}BinLift`];
 
             // 1. Move to pick position (home → approach → pick)
-            await this.moveMultiAndAnimate([
-                this.robot.positions.intermediate1,
-                approachPos,
-                pickPos
-            ], 2000);
+            await this.robot.moveTo(this.robot.currentAngles, approachPos, 700);
+            await this.robot.moveTo(this.robot.currentAngles, pickPos, 700);
 
-            // 2. Pick object
+            /// 2. Pick object
             await this.pickObject(sourceBin);
 
             if (this.ui && this.ui.updateBinCounts) this.ui.updateBinCounts();
 
             // 3. Move to drop position (pick → lift → intermediate → dropApproach → drop)
-            await this.moveMultiAndAnimate([
-                pickPos,
-                liftPos,
-                this.robot.positions.intermediate1,
-                dropApproachPos,
-                dropPos
-            ], 4000);
+            await this.robot.moveTo(this.robot.currentAngles, liftPos, 700);
+            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700);
+            await this.robot.moveTo(this.robot.currentAngles, dropApproachPos, 700);
+            await this.robot.moveTo(this.robot.currentAngles, dropPos, 600);
 
             // 4. Drop object
             await this.dropObject(targetBin);
@@ -110,36 +112,13 @@ class AutomationManager {
             if (this.ui && this.ui.updateBinCounts) this.ui.updateBinCounts();
 
             // 5. Move back home (drop → dropLift → home)
-            await this.moveMultiAndAnimate([
-                dropPos,
-                dropLiftPos,
-                this.robot.positions.intermediate1
-            ], 2000);
+            await this.robot.moveTo(this.robot.currentAngles, dropLiftPos, 700);
+            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700);
 
         } catch (error) {
             console.error('Pick and place failed:', error);
-            if (this.currentlyHeldObject) {
-                try { await this.emergencyDrop(); } catch (dropError) {}
-            }
             throw error;
         }
-    }
-
-    async moveMultiAndAnimate(waypoints, duration) {
-        // Send waypoints to backend to move the robot and get the path for animation
-        waypoints.forEach((wp, i) => {
-            if (!Array.isArray(wp) || wp.length !== 6 || wp.some(a => typeof a !== 'number' || isNaN(a))) {
-                console.error(`Waypoint ${i} is invalid:`, wp);
-            }
-        });
-        const response = await fetch(`${this.robot.backendUrl}/move-multi`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ waypoints, steps_per_segment: 20 })
-        });
-        if (!response.ok) throw new Error('Backend move-multi failed');
-        const data = await response.json();
-        await this.robot.moveAlongPath(data.steps, duration);
     }
 
     async pickObject(binName) {
@@ -164,15 +143,7 @@ class AutomationManager {
         console.log(`📦 Object dropped in ${binName} bin`);
     }
 
-    async emergencyDrop() {
-        if (this.currentlyHeldObject) {
-            this.binManager.dropObject(this.currentlyHeldObject, 'left');
-            this.detachObjectFromRobot();
-            this.currentlyHeldObject = null;
-        }
-        await this.robot.moveTo(this.robot.positions.home, 1000);
-    }
-
+    // add to robot script
     attachObjectToRobot(object) {
         if (this.robot.joints[5]) {
             const flangePosition = new THREE.Vector3();
@@ -183,6 +154,7 @@ class AutomationManager {
         }
     }
 
+    // add to robot script
     detachObjectFromRobot() {
         if (this.currentlyHeldObject && this.robot.joints[5]) {
             // Remove from robot flange
@@ -193,6 +165,13 @@ class AutomationManager {
                 this.robot.scene.add(this.currentlyHeldObject);
                 this.currentlyHeldObject.position.copy(this.robot.joints[5].getWorldPosition(new THREE.Vector3()));
             }
+        }
+    }
+
+    stopEmergencyMonitor() {
+        if (this.emergencyMonitorInterval) {
+            clearInterval(this.emergencyMonitorInterval);
+            this.emergencyMonitorInterval = null;
         }
     }
 

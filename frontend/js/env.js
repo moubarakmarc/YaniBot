@@ -15,11 +15,17 @@ window.ENV = {
     
     // API endpoints
     API_ENDPOINTS: {
-        MOVE: '/move',
+        ROOT: '/',
         STATE: '/state',
         RESET: '/reset',
         HEALTH: '/health',
-        EMERGENCY_STOP: '/emergency_stop'
+        MOVING: '/moving',
+        ANGLES: '/angles',
+        PAUSE: '/pause',
+        STOP: '/stop',
+        INTERPOLATE: '/interpolate',
+        LIMITS: '/limits',
+        EMERGENCY: '/emergency',
     },
     
     // Feature flags
