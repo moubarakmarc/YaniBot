@@ -63,12 +63,8 @@ class RobotManager {
             
             // Animate visual robot
             await this.animateToPosition(path, duration);
-            
-            // Update current state
-            this.currentAngles = [...path[path.length - 1]];
-            await this.api.setCurrentAngles(this.currentAngles, null, null);
-            
-            console.log('✅ Robot movement completed');
+
+            console.log('✅ Robot movement finished');
             
         } catch (error) {
             console.error('❌ Robot movement failed:', error);
@@ -83,18 +79,22 @@ class RobotManager {
         // Animate through the path
         for (let i = 0; i < path.length; i++) {
             await this.waitWhilePaused();
-            const limitCheck = await this.api.check_joint_limits(path[i]);
+            const limitCheck = await this.api.check_joint_limits(path[i], null, null);
             if (limitCheck && limitCheck.success === false) {
                 console.warn('❌ Joint limit violation detected, stopping animation');
-                break;
+                this.ui.showStatus(
+                    'Joints are at their limits. Movement would damage the robot.',
+                    'error'
+                );
+                return;
             }
             await this.api.setMovingState(true);
             this.setJointAngles(path[i]);
             if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
+            await this.api.setCurrentAngles(path[i], null, null);
             await this.sleep(duration / path.length);
         }
-        // Update currentAngles to last pose
-        this.currentAngles = [...path[path.length - 1]];
+
     }
     
     setJointAngles(angles) {

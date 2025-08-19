@@ -248,21 +248,7 @@ class UIManager {
         }
         
         // Set new debounce timer for backend update
-        this.inputDebounceTimers[jointIndex] = setTimeout(() => {
-            this.sendJointAngleToBackend(jointIndex, angle);
-        }, 3000); // 3000ms debounce
-    }
-    
-    async sendJointAngleToBackend(jointIndex, angle) {
-        try {
-            // Update robot's current angles
-            let state = await this.api.getState();
-            if (state.currentAngles) {
-                this.api.setCurrentAngles(null, jointIndex, angle);
-            }
-        } catch (error) {
-            console.error('Failed to update backend:', error);
-        }
+        this.inputDebounceTimers[jointIndex] = setTimeout(async () => {}, 3000); // 3000ms debounce
     }
 
     async handlePageUnload() {

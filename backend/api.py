@@ -47,7 +47,9 @@ class InterpolateRequest(BaseModel):
     target_angles: list[float] = Field(..., min_items=6, max_items=6)
 
 class JointLimitsResponse(BaseModel):
-    joint_angles: list[float]
+    joint_angles: Optional[List[float]] = Field(None, min_items=6, max_items=6)
+    value: Optional[float] = None
+    index: Optional[int] = None
 
 class SetAnglesRequest(BaseModel):
     joint_angles: Optional[List[float]] = Field(None, min_items=6, max_items=6)
@@ -171,18 +173,35 @@ def check_joint_limits(request: JointLimitsResponse):
     Raises:
         HTTPException: If any joint angle is out of the defined limits.
     """
-    if not request.joint_angles or len(request.joint_angles) != 6:
-        raise HTTPException(status_code=400, detail="Invalid joint angles provided. Must be a list of 6 angles.")
-    
-    # Check if each joint angle is within the defined limits
-    for i in range(len(request.joint_angles)):
-        if request.joint_angles[i] < robot.joint_limits[i][0] or request.joint_angles[i] > robot.joint_limits[i][1]:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Joint angle {i} out of limits: {robot.joint_limits[i]}"
-            )
-
-    return {"success": True}
+    try:
+        if request.joint_angles is not None:
+            if len(request.joint_angles) != 6:
+                raise HTTPException(status_code=400, detail="Invalid joint angles provided. Must be a list of 6 angles.")
+            for i in range(len(request.joint_angles)):
+                if request.joint_angles[i] < robot.joint_limits[i][0] or request.joint_angles[i] > robot.joint_limits[i][1]:
+                    return {
+                        "success": False,
+                        "message": f"Joint angle {i} out of limits: {robot.joint_limits[i]}",
+                        "joint_angles": request.joint_angles
+                    }
+        elif request.value is not None and request.index is not None:
+            if not (0 <= request.index < 6):
+                raise HTTPException(status_code=400, detail="Index must be between 0 and 5.")
+            if request.value < robot.joint_limits[request.index][0] or request.value > robot.joint_limits[request.index][1]:
+                return {
+                    "success": False,
+                    "message": f"Joint angle {request.index} out of limits: {robot.joint_limits[request.index]}",
+                    "value": request.value,
+                    "index": request.index
+                }
+            robot.currentAngles[request.index] = request.value
+        else:
+            raise HTTPException(status_code=400, detail="Provide either joint_angles or value and index.")
+        return {"success": True, "currentAngles": robot.currentAngles}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/angles")
 def set_joint_angles(request: SetAnglesRequest):
@@ -252,9 +271,12 @@ def interpolate_path_to_move(request: InterpolateRequest, steps: int = 20):
         # Calculate the maximum absolute difference between any joint
         diffs = [abs(a - b) for a, b in zip(request.start_angles, request.target_angles)]
         max_diff = max(diffs)
-        # If the largest difference is very small, reduce steps
-        if max_diff < 5.0:
-            steps = 2
+        min_steps = 2
+        scale = 2 / 2  # 2 steps per 2 degrees
+        if max_diff < 20:
+            steps = 30  # Use your specific number for small moves
+        else:
+            steps = max(min_steps, int(scale * max_diff))
         path = list(interpolate_path(request.start_angles, request.target_angles, steps=steps))
         return {
             "success": True,
