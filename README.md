@@ -84,13 +84,19 @@ It provides real-time visualization, manual and automated joint control, and mot
     cd YaniBot
     ```
 
-2. **Build and run with Docker**
+2. **Build and run with Docker (first time)**
     ```bash
     chmod +x build.sh
     ./build.sh
     ```
 
-3. **Access the application**
+3. **Restart the app after reboot or to restart cleanly**
+    ```bash
+    chmod +x run.sh
+    ./run.sh
+    ```
+    
+4. **Access the application**
     - 🌐 **Frontend**: http://localhost
     - 🔧 **Backend API**: http://localhost:8000
     - 📖 **API Docs**: http://localhost:8000/docs
@@ -116,13 +122,6 @@ It provides real-time visualization, manual and automated joint control, and mot
 
 ### Example Usage
 
-**Move Robot:**
-```bash
-curl -X POST "http://localhost:8000/angles" \
-     -H "Content-Type: application/json" \
-     -d '{"target_angles": [0, 30, -45, 0, 15, 0]}'
-```
-
 **Get Robot State:**
 ```bash
 curl http://localhost:8000/state
@@ -141,26 +140,26 @@ curl -X POST http://localhost:8000/reset
 YaniBot/
 ├── frontend/                   # Frontend application
 │   ├── index.html              # Main HTML file
-│   ├── style.css               # Styling
+│   ├── style.css               # Main stylesheet
 │   └── js/
 │       ├── main.js             # Application entry point
-│       ├── scene.js            # 3D scene management
-│       ├── robot.js            # Robot model and control
-│       ├── automation.js       # Automation logic
-│       ├── ui.js               # User interface handlers
-│       ├── api.js              # Backend communication
-│       └── env.js              # Environment configuration
+│       ├── scene.js            # 3D scene and workspace logic
+│       ├── robot.js            # Robot 3D model and kinematics
+│       ├── automation.js       # Automation and task logic
+│       ├── ui.js               # User interface and event handling
+│       ├── api.js              # Backend API communication
+│       └── env.js              # Environment/backend URL config
 ├── backend/                    # Backend API
-│   ├── api.py                  # FastAPI application
-│   ├── robot.py                # Robot arm logic
+│   ├── api.py                  # FastAPI application (all endpoints)
+│   ├── robot.py                # RobotArm class and logic
 │   ├── requirements.txt        # Python dependencies
-│   └── tests/                  # Unit tests
-├── docker-compose.yml          # Multi-container setup
-├── backend.Dockerfile          # Backend container config
-├── frontend.Dockerfile         # Frontend container config
-├── nginx.conf                  # Nginx configuration
-├── build.sh                    # Build script
-└── README.md                   # This file
+│   └── tests/                  # Unit tests for backend logic and API
+├── docker-compose.yml          # Multi-container orchestration
+├── backend.Dockerfile          # Backend container build config
+├── frontend.Dockerfile         # Frontend container build config
+├── nginx.conf                  # Nginx reverse proxy configuration
+├── build.sh                    # Build and run helper script
+└── README.md                   # Project documentation (this file)
 ```
 
 ---
@@ -208,12 +207,12 @@ docker compose up -d backend
 
 | Joint | Range           | Description                |
 |-------|-----------------|----------------------------|
-| **A1** | -180° to +180° | Base rotation (Z-axis)     |
-| **A2** | -65° to +80°   | Shoulder pitch (Y-axis)    |
-| **A3** | -180° to +60°  | Elbow pitch (Y-axis)       |
-| **A4** | -300° to +300° | Wrist roll (X-axis)        |
-| **A5** | -120° to +120° | Wrist pitch (Z-axis)       |
-| **A6** | -300° to +300° | Flange roll (X-axis)       |
+| **A1** | -180° to +180° | Base rotation              |
+| **A2** | -65° to +80°   | Shoulder pitch             |
+| **A3** | -180° to +60°  | Elbow pitch                |
+| **A4** | -300° to +300° | Wrist roll                 |
+| **A5** | -120° to +120° | Wrist pitch                |
+| **A6** | -300° to +300° | Flange roll                |
 
 ### Environment Variables
 

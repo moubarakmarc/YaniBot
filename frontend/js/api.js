@@ -46,8 +46,8 @@ class APIManager {
 
     async getInterpolatedPath(startAngles = null, targetAngles, steps = 20) {
         const payload = startAngles
-            ? { start_angles: startAngles, target_angles: targetAngles }
-            : { target_angles: targetAngles };
+            ? { startAngles: startAngles, targetAngles: targetAngles }
+            : { targetAngles: targetAngles };
         const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.INTERPOLATE}?steps=${steps}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -59,12 +59,12 @@ class APIManager {
         return data.steps;
     }
 
-    async check_joint_limits(angles= null, index = null, value = null) {
+    async check_joint_limits(angles) {
         try {
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.LIMITS}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ joint_angles: angles, index: index, value: value })
+                body: JSON.stringify({ joint_angles: angles })
             });
             const data = await response.json();
             if (window.LOG_OPTIONS.jointLimits) console.log('check_joint_limits response:', data);
@@ -76,25 +76,21 @@ class APIManager {
         }
     }
 
-    async setCurrentAngles(angles = null, index = null, value = null) {
+    async setCurrentAngles(angles) {
         try {
             let payload = {};
             if (Array.isArray(angles) && angles.length === 6) {
                 payload.joint_angles = angles;
-            } else if (index !== null && value !== null) {
-                payload.index = index;
-                payload.value = value;
             } else {
-                throw new Error('Provide either 6 joint angles or index and value.');
+                throw new Error('Provide either an array of 6 angles');
             }
-
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.ANGLES}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             const data = await response.json();
-            if (window.LOG_OPTIONS.currentAngles) console.log('current_angles response:', data);
+            if (window.LOG_OPTIONS.currentAngles) console.log('currentAngles response:', data);
             if (!response.ok) throw new Error('Failed to set joint angles');
             return data;
         } catch (error) {
