@@ -83,9 +83,13 @@ class RobotManager {
         // Animate through the path
         for (let i = 0; i < path.length; i++) {
             await this.waitWhilePaused();
-            const limitCheck = await this.api.check_joint_limits(path[i]);
+            const limitCheck = await this.api.check_joint_limits(path[i], null, null);
             if (limitCheck && limitCheck.success === false) {
                 console.warn('❌ Joint limit violation detected, stopping animation');
+                this.ui.showStatus(
+                    'Continuing would damage the robot. Movement stopped.',
+                    'error'
+                );
                 break;
             }
             await this.api.setMovingState(true);

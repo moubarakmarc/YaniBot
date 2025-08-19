@@ -59,12 +59,12 @@ class APIManager {
         return data.steps;
     }
 
-    async check_joint_limits(angles) {
+    async check_joint_limits(angles= null, index = null, value = null) {
         try {
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.LIMITS}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ joint_angles: angles })
+                body: JSON.stringify({ joint_angles: angles, index: index, value: value })
             });
             const data = await response.json();
             if (window.LOG_OPTIONS.jointLimits) console.log('check_joint_limits response:', data);
