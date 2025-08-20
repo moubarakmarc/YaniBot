@@ -212,7 +212,7 @@ class UIManager {
             this.showStatus('Resetting robot...', 'info');
             const manualIntervention = true; // No pause during reset
             let resetData = await this.api.reset();
-            await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000, manualInterventions);
+            await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000, manualIntervention);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);
