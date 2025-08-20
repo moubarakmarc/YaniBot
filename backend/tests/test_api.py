@@ -69,6 +69,10 @@ class TestAPI:
         assert data["message"] == "Robot reset to home position"
         assert data["currentAngles"] == [1,2,3,4,5,6]  # Assuming reset returns the last set angles
         assert data["targetAngles"] == [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]
+        assert data["isMoving"] is False
+        assert data["isPaused"] is False
+        assert data["isStopped"] is False
+        assert data["isEmergencyMode"] is False
 
     def test_post_limits_valid(self):
         response = client.post("/limits", json={"joint_angles": [0, 0, 0, 0, 0, 0]})
