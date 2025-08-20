@@ -64,7 +64,7 @@ class AutomationManager {
         if (!sourceBin || this.binManager.isEmpty(sourceBin)) {
             console.log('🚫 No valid transfer pair available. Stopping automation.');
             this.ui.showStatus('Automation stopped: No objects left to move', 'warning');
-            this.api.setMovingState(false);
+            this.ui.handleStopAutomation();
             return false;
         }
         await this.pickAndPlace(sourceBin, targetBin);
