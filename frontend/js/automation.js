@@ -92,8 +92,8 @@ class AutomationManager {
             const dropLiftPos = this.robot.positions[`${targetBin}BinLift`];
 
             // 1. Move to pick position (home → approach → pick)
-            await this.robot.moveTo(this.robot.currentAngles, approachPos, 700);
-            await this.robot.moveTo(this.robot.currentAngles, pickPos, 700);
+            await this.robot.moveTo(null, approachPos, 700);
+            await this.robot.moveTo(null, pickPos, 700);
 
             /// 2. Pick object
             await this.pickObject(sourceBin);
@@ -101,10 +101,10 @@ class AutomationManager {
             if (this.ui && this.ui.updateBinCounts) this.ui.updateBinCounts();
 
             // 3. Move to drop position (pick → lift → intermediate → dropApproach → drop)
-            await this.robot.moveTo(this.robot.currentAngles, liftPos, 700);
-            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700);
-            await this.robot.moveTo(this.robot.currentAngles, dropApproachPos, 700);
-            await this.robot.moveTo(this.robot.currentAngles, dropPos, 600);
+            await this.robot.moveTo(null, liftPos, 700);
+            await this.robot.moveTo(null, this.robot.positions.intermediate1, 700);
+            await this.robot.moveTo(null, dropApproachPos, 700);
+            await this.robot.moveTo(null, dropPos, 600);
 
             // 4. Drop object
             await this.dropObject(targetBin);
@@ -112,8 +112,8 @@ class AutomationManager {
             if (this.ui && this.ui.updateBinCounts) this.ui.updateBinCounts();
 
             // 5. Move back home (drop → dropLift → home)
-            await this.robot.moveTo(this.robot.currentAngles, dropLiftPos, 700);
-            await this.robot.moveTo(this.robot.currentAngles, this.robot.positions.intermediate1, 700);
+            await this.robot.moveTo(null, dropLiftPos, 700);
+            await this.robot.moveTo(null, this.robot.positions.intermediate1, 700);
 
         } catch (error) {
             console.error('Pick and place failed:', error);

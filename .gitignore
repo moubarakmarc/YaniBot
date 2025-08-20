@@ -206,3 +206,11 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 .vscode/settings.json
+
+
+node_modules/
+coverage/
+dist/
+*.log
+.env.local
+.DS_Store

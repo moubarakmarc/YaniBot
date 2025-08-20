@@ -46,29 +46,29 @@ class RobotManager {
     // Movement Methods
     async moveSingleJoint(jointIndex, value, duration = 2000) {
         let state = await this.api.getState();
-        const current_angles = state.currentAngles;
-        const target_angles = [...current_angles];
-        target_angles[jointIndex] = value;
-        await this.moveTo(current_angles, target_angles, duration);
+        const currentAngles = state.currentAngles;
+        const targetAngles = [...currentAngles];
+        targetAngles[jointIndex] = value;
+        await this.moveTo(currentAngles, targetAngles, duration);
     }
 
-    async moveTo(start_angles, target_angles, duration = 2000) {
+    async moveTo(startAngles = null, targetAngles, duration = 2000) {
         while (this.isMoving) {
             console.warn('Robot is already moving, ignoring new command');
             await this.sleep(50);
         }
         
         try {
-            const path = await this.api.getInterpolatedPath(start_angles, target_angles, 30);
+            if (startAngles === null) {
+                let state = await this.api.getState();
+                startAngles = state.currentAngles;
+            }
+            const path = await this.api.getInterpolatedPath(startAngles, targetAngles, 30);
             
             // Animate visual robot
             await this.animateToPosition(path, duration);
-            
-            // Update current state
-            this.currentAngles = [...path[path.length - 1]];
-            await this.api.setCurrentAngles(this.currentAngles, null, null);
-            
-            console.log('✅ Robot movement completed');
+
+            console.log('✅ Robot movement finished');
             
         } catch (error) {
             console.error('❌ Robot movement failed:', error);
@@ -86,15 +86,19 @@ class RobotManager {
             const limitCheck = await this.api.check_joint_limits(path[i]);
             if (limitCheck && limitCheck.success === false) {
                 console.warn('❌ Joint limit violation detected, stopping animation');
-                break;
+                this.ui.showStatus(
+                    'Joints are at their limits. Movement would damage the robot.',
+                    'error'
+                );
+                return;
             }
             await this.api.setMovingState(true);
             this.setJointAngles(path[i]);
             if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
+            await this.api.setCurrentAngles(path[i]);
             await this.sleep(duration / path.length);
         }
-        // Update currentAngles to last pose
-        this.currentAngles = [...path[path.length - 1]];
+
     }
     
     setJointAngles(angles) {

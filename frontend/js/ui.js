@@ -220,7 +220,7 @@ class UIManager {
         try {
             this.showStatus('Resetting robot...', 'info');
             let resetData = await this.api.reset();
-            await this.robot.moveTo(resetData.current_angles, resetData.target_angles, 1000);
+            await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);
@@ -248,21 +248,7 @@ class UIManager {
         }
         
         // Set new debounce timer for backend update
-        this.inputDebounceTimers[jointIndex] = setTimeout(() => {
-            this.sendJointAngleToBackend(jointIndex, angle);
-        }, 3000); // 3000ms debounce
-    }
-    
-    async sendJointAngleToBackend(jointIndex, angle) {
-        try {
-            // Update robot's current angles
-            let state = await this.api.getState();
-            if (state.currentAngles) {
-                this.api.setCurrentAngles(null, jointIndex, angle);
-            }
-        } catch (error) {
-            console.error('Failed to update backend:', error);
-        }
+        this.inputDebounceTimers[jointIndex] = setTimeout(async () => {}, 3000); // 3000ms debounce
     }
 
     async handlePageUnload() {

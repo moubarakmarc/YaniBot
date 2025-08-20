@@ -25,34 +25,32 @@ app.add_middleware(
 # Initialize the robot arm
 robot = RobotArm(isEmergencyMode=False, isPaused=False, isMoving=False)
 
-def interpolate_path(start_angles, target_angles, steps=20):
+def interpolate_path(startAngles, targetAngles, steps=20):
     """
     Interpolates between the current joint angles and the target joint angles over a specified number of steps.
     Args:
-        start_angles (list or array-like): The starting joint angles to interpolate from.
-        target_angles (list or array-like): The target joint angles to interpolate towards.
+        startAngles (list or array-like): The starting joint angles to interpolate from.
+        targetAngles (list or array-like): The target joint angles to interpolate towards.
         steps (int, optional): The number of interpolation steps. Defaults to 20.
     Yields:
         list: The interpolated joint angles at each step.
     """
-    current = np.array(start_angles)
-    target = np.array(target_angles)
+    current = np.array(startAngles)
+    target = np.array(targetAngles)
     return [list(current + alpha * (target - current)) for alpha in np.linspace(0, 1, steps)]
 
 class MovingStateRequest(BaseModel):
     is_moving: bool
 
 class InterpolateRequest(BaseModel):
-    start_angles: list[float] = Field(..., min_items=6, max_items=6)
-    target_angles: list[float] = Field(..., min_items=6, max_items=6)
+    startAngles: list[float] = Field(..., min_length=6, max_length=6)
+    targetAngles: list[float] = Field(..., min_length=6, max_length=6)
 
 class JointLimitsResponse(BaseModel):
-    joint_angles: list[float]
+    joint_angles: List[float] = Field(..., min_length=6, max_length=6)
 
 class SetAnglesRequest(BaseModel):
-    joint_angles: Optional[List[float]] = Field(None, min_items=6, max_items=6)
-    value: Optional[float] = None
-    index: Optional[int] = None
+    joint_angles: List[float] = Field(..., min_length=6, max_length=6)
 
 class EmergencyStateRequest(BaseModel):
     is_emergency: bool
@@ -150,8 +148,8 @@ def reset_robot():
         return {
             "success": True,
             "message": "Robot reset to home position",
-            "current_angles": robot.currentAngles,
-            "target_angles": home_position
+            "currentAngles": robot.currentAngles,
+            "targetAngles": home_position
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -171,18 +169,22 @@ def check_joint_limits(request: JointLimitsResponse):
     Raises:
         HTTPException: If any joint angle is out of the defined limits.
     """
-    if not request.joint_angles or len(request.joint_angles) != 6:
-        raise HTTPException(status_code=400, detail="Invalid joint angles provided. Must be a list of 6 angles.")
-    
-    # Check if each joint angle is within the defined limits
-    for i in range(len(request.joint_angles)):
-        if request.joint_angles[i] < robot.joint_limits[i][0] or request.joint_angles[i] > robot.joint_limits[i][1]:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Joint angle {i} out of limits: {robot.joint_limits[i]}"
-            )
-
-    return {"success": True}
+    try:
+        if request.joint_angles is not None:
+            if len(request.joint_angles) != 6:
+                raise HTTPException(status_code=400, detail="Invalid joint angles provided. Must be a list of 6 angles.")
+            for i in range(len(request.joint_angles)):
+                if request.joint_angles[i] < robot.joint_limits[i][0] or request.joint_angles[i] > robot.joint_limits[i][1]:
+                    return {
+                        "success": False,
+                        "message": f"Joint angle {i} out of limits: {robot.joint_limits[i]}",
+                        "joint_angles": request.joint_angles
+                    }
+        else:
+            raise HTTPException(status_code=400, detail="Provided empty joint angles.")
+        return {"success": True, "currentAngles": request.joint_angles}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/angles")
 def set_joint_angles(request: SetAnglesRequest):
@@ -204,10 +206,6 @@ def set_joint_angles(request: SetAnglesRequest):
             if len(request.joint_angles) != 6:
                 raise HTTPException(status_code=400, detail="Must provide 6 joint angles.")
             robot.currentAngles = request.joint_angles
-        elif request.value is not None and request.index is not None:
-            if not (0 <= request.index < 6):
-                raise HTTPException(status_code=400, detail="Index must be between 0 and 5.")
-            robot.currentAngles[request.index] = request.value
         else:
             raise HTTPException(status_code=400, detail="Provide either joint_angles or value and index.")
         return {"success": True, "currentAngles": robot.currentAngles}
@@ -250,16 +248,19 @@ def interpolate_path_to_move(request: InterpolateRequest, steps: int = 20):
     """
     try:
         # Calculate the maximum absolute difference between any joint
-        diffs = [abs(a - b) for a, b in zip(request.start_angles, request.target_angles)]
+        diffs = [abs(a - b) for a, b in zip(request.startAngles, request.targetAngles)]
         max_diff = max(diffs)
-        # If the largest difference is very small, reduce steps
-        if max_diff < 5.0:
-            steps = 2
-        path = list(interpolate_path(request.start_angles, request.target_angles, steps=steps))
+        min_steps = 2
+        scale = 2 / 2  # 2 steps per 2 degrees
+        if max_diff < 20:
+            steps = 30  # Use your specific number for small moves
+        else:
+            steps = max(min_steps, int(scale * max_diff))
+        path = list(interpolate_path(request.startAngles, request.targetAngles, steps=steps))
         return {
             "success": True,
             "steps": path,
-            "message": f"Interpolated path from {request.start_angles} to {request.target_angles} in {steps} steps"
+            "message": f"Interpolated path from {request.startAngles} to {request.targetAngles} in {steps} steps"
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -278,7 +279,7 @@ def set_stop_state(request: StopRequest):
     """
     try:
         robot.isStopped = request.is_stopped
-        return {"success": True, "message": "Robot movement stopped"}
+        return {"success": True, "message": "Robot movement stopped", "isStopped": robot.isStopped}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -296,7 +297,7 @@ def set_pause_state(request: PauseRequest):
     """
     try:
         robot.isPaused = request.is_paused
-        return {"success": True, "message": "Robot movement paused"}
+        return {"success": True, "message": "Robot movement paused", "isPaused": robot.isPaused}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

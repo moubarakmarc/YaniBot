@@ -1,11 +1,16 @@
 # YaniBot 🤖
 
 > **ABB IRB6600 6-Axis Robot Arm Simulator**  
-> A web-based 3D robot simulator with FastAPI backend and Three.js frontend
+> A web-based 3D robot simulator with a FastAPI backend and Three.js frontend
 
-This repo is for the assignment handed over to me by Sereact
+---
 
-![YaniBot Demo](https://img.shields.io/badge/Status-Active-brightgreen) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688) ![Three.js](https://img.shields.io/badge/Three.js-3D-orange)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688)
+![Three.js](https://img.shields.io/badge/Three.js-3D-orange)
+
+---
 
 ## 📋 Table of Contents
 
@@ -18,97 +23,104 @@ This repo is for the assignment handed over to me by Sereact
 - [Development](#development)
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
+- [License](#license)
+- [Authors](#authors)
+
+---
 
 ## 🎯 Overview
 
-YaniBot is a comprehensive 3D simulation environment for the ABB IRB6600 industrial robot arm. Built for educational and development purposes, it provides real-time visualization, joint control, and motion planning capabilities through a modern web interface.
+YaniBot is a comprehensive 3D simulation environment for the ABB IRB6600 industrial robot arm.  
+It provides real-time visualization, manual and automated joint control, and motion planning through a modern web interface.
 
-**Assignment created for:** Sereact
+---
 
 ## ✨ Features
 
-### 🎮 Interactive Controls
-- **Manual Joint Control**: Real-time slider controls for all 6 axes
-- **Visual Feedback**: Live 3D visualization with Three.js
-- **Coordinate System**: Color-coded axes indicators (X-Red, Y-Blue, Z-Green)
-- **Reset Functionality**: One-click return to home position
+- **Manual Joint Control:** Enter joint angles in number fields and press Enter to send commands.
+- **Live 3D Visualization:** Real-time robot rendering with Three.js.
+- **Automation Controls:** Start, stop, pause, and resume automated robot tasks.
+- **Emergency Stop:** Instantly halt all robot actions and display emergency UI.
+- **Workspace & Bin Status:** Visualize workspace boundaries and track bin object counts.
+- **Status & Logging:** See current robot state, actions, and toggle log options.
+- **RESTful API:** FastAPI backend with automatic documentation.
+- **Containerized:** Full Docker deployment ready.
+- **CORS Enabled:** Cross-origin resource sharing configured.
+- **Real-time Updates:** Live joint state synchronization.
 
-### 🤖 Robot Simulation
-- **Accurate ABB IRB6600 Model**: Realistic joint limits and kinematics
-- **6-DOF Movement**: Full 6-axis articulation
-- **Safety Limits**: Built-in joint angle validation
-- **Smooth Interpolation**: Natural movement transitions
-
-### 🔧 Technical Features
-- **RESTful API**: FastAPI backend with automatic documentation
-- **Containerized**: Full Docker deployment ready
-- **CORS Enabled**: Cross-origin resource sharing configured
-- **Real-time Updates**: Live joint state synchronization
+---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **Three.js** - 3D graphics and rendering
-- **Vanilla JavaScript** - Core application logic
-- **HTML5/CSS3** - Modern web interface
-- **Nginx** - Production web server
+**Frontend:**
+- [Three.js](https://threejs.org/) — 3D graphics and rendering
+- Vanilla JavaScript (ES6+)
+- HTML5/CSS3
+- Nginx (for production)
 
-### Backend
-- **FastAPI** - Modern Python web framework
-- **Pydantic** - Data validation and settings
-- **NumPy** - Numerical computations
-- **Uvicorn** - ASGI server
+**Backend:**
+- [FastAPI](https://fastapi.tiangolo.com/) — Python web framework
+- Pydantic — Data validation
+- NumPy — Numerical computations
+- Uvicorn — ASGI server
 
-### Infrastructure
-- **Docker** - Containerization
-- **Docker Compose** - Multi-container orchestration
+**Infrastructure:**
+- Docker & Docker Compose
+
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Docker & Docker Compose
 - Git
 
 ### Installation
 
 1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd YaniBot
-   ```
+    ```bash
+    git clone <repository-url>
+    cd YaniBot
+    ```
 
-2. **Build and run with Docker**
-   ```bash
-   chmod +x build.sh
-   ./build.sh
-   ```
+2. **Build and run with Docker (first time)**
+    ```bash
+    chmod +x build.sh
+    ./build.sh
+    ```
 
-3. **Access the application**
-   - 🌐 **Frontend**: http://localhost
-   - 🔧 **Backend API**: http://localhost:8000
-   - 📖 **API Docs**: http://localhost:8000/docs
+3. **Restart the app after reboot or to restart cleanly**
+    ```bash
+    chmod +x run.sh
+    ./run.sh
+    ```
+    
+4. **Access the application**
+    - 🌐 **Frontend**: http://localhost
+    - 🔧 **Backend API**: http://localhost:8000
+    - 📖 **API Docs**: http://localhost:8000/docs
+
+---
 
 ## 📚 API Documentation
 
 ### Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | Root endpoint with API info |
-| `GET` | `/health` | Health check |
-| `GET` | `/state` | Current robot state |
-| `POST` | `/move` | Move robot to target angles |
-| `POST` | `/reset` | Reset to home position |
-| `GET` | `/limits` | Joint angle limits |
+| Method | Endpoint     | Description                    |
+|--------|-------------|--------------------------------|
+| GET    | `/`         | Root endpoint with API info    |
+| GET    | `/health`   | Health check                   |
+| GET    | `/state`    | Current robot state            |
+| POST   | `/angles`   | Set all or single joint angles |
+| POST   | `/reset`    | Reset to home position         |
+| POST   | `/interpolate` | Interpolated joint path      |
+| POST   | `/limits`   | Check joint angle limits       |
+| POST   | `/pause`    | Pause or unpause robot         |
+| POST   | `/stop`     | Stop robot movement            |
+| POST   | `/emergency`| Set or clear emergency mode    |
 
 ### Example Usage
-
-**Move Robot:**
-```bash
-curl -X POST "http://localhost:8000/move" \
-     -H "Content-Type: application/json" \
-     -d '{"target_angles": [0, 30, -45, 0, 15, 0]}'
-```
 
 **Get Robot State:**
 ```bash
@@ -120,32 +132,37 @@ curl http://localhost:8000/state
 curl -X POST http://localhost:8000/reset
 ```
 
+---
+
 ## 📁 Project Structure
 
 ```
 YaniBot/
 ├── frontend/                   # Frontend application
 │   ├── index.html              # Main HTML file
-│   ├── style.css               # Styling
+│   ├── style.css               # Main stylesheet
 │   └── js/
 │       ├── main.js             # Application entry point
-│       ├── scene.js            # 3D scene management
-│       ├── robot.js            # Robot model and control
-│       ├── automation.js       # Automation logic
-│       ├── ui.js               # User interface handlers
-│       ├── api.js              # Backend communication
-│       └── env.js              # Environment configuration
+│       ├── scene.js            # 3D scene and workspace logic
+│       ├── robot.js            # Robot 3D model and kinematics
+│       ├── automation.js       # Automation and task logic
+│       ├── ui.js               # User interface and event handling
+│       ├── api.js              # Backend API communication
+│       └── env.js              # Environment/backend URL config
 ├── backend/                    # Backend API
-│   ├── api.py                  # FastAPI application
-│   ├── robot.py                # Robot arm logic
-│   └── requirements.txt        # Python dependencies
-├── docker-compose.yml          # Multi-container setup
-├── backend.Dockerfile          # Backend container config
-├── frontend.Dockerfile         # Frontend container config
-├── nginx.conf                  # Nginx configuration
-├── build.sh                    # Build script
-└── README.md                   # This file
+│   ├── api.py                  # FastAPI application (all endpoints)
+│   ├── robot.py                # RobotArm class and logic
+│   ├── requirements.txt        # Python dependencies
+│   └── tests/                  # Unit tests for backend logic and API
+├── docker-compose.yml          # Multi-container orchestration
+├── backend.Dockerfile          # Backend container build config
+├── frontend.Dockerfile         # Frontend container build config
+├── nginx.conf                  # Nginx reverse proxy configuration
+├── build.sh                    # Build and run helper script
+└── README.md                   # Project documentation (this file)
 ```
+
+---
 
 ## 🛠️ Development
 
@@ -182,58 +199,47 @@ docker compose build backend --no-cache
 docker compose up -d backend
 ```
 
+---
+
 ## ⚙️ Configuration
 
 ### Robot Specifications (ABB IRB6600)
 
-| Joint | Range | Description |
-|-------|-------|-------------|
-| **A1** | -180° to +180° | Base rotation (Z-axis) |
-| **A2** | -65° to +80° | Shoulder pitch (Y-axis) |
-| **A3** | -180° to +60° | Elbow pitch (Y-axis) |
-| **A4** | -300° to +300° | Wrist roll (X-axis) |
-| **A5** | -120° to +120° | Wrist pitch (Z-axis) |
-| **A6** | -300° to +300° | Flange roll (X-axis) |
+| Joint | Range           | Description                |
+|-------|-----------------|----------------------------|
+| **A1** | -180° to +180° | Base rotation              |
+| **A2** | -65° to +80°   | Shoulder pitch             |
+| **A3** | -180° to +60°  | Elbow pitch                |
+| **A4** | -300° to +300° | Wrist roll                 |
+| **A5** | -120° to +120° | Wrist pitch                |
+| **A6** | -300° to +300° | Flange roll                |
 
 ### Environment Variables
 
-Create a `.env` file:
-```properties
-DEBUG=true
-FLASK_ENV=development
-```
+Create a `.env` file if needed for custom configuration.
+
+---
 
 ## 🔍 Troubleshooting
 
-### Common Issues
-
 **Docker Compose not found:**
 ```bash
-# Install Docker Compose V2
 sudo apt install docker-compose-plugin
 ```
 
 **Port conflicts:**
 ```bash
-# Check what's using ports 80 and 8000
 sudo netstat -tulpn | grep :80
 sudo netstat -tulpn | grep :8000
 ```
 
 **Container fails to start:**
 ```bash
-# Check logs
 docker compose logs backend
 docker compose logs frontend
 ```
 
-## 🎯 Features Roadmap
-
-- [ ] **Inverse Kinematics**: Target position-based movement
-- [ ] **Path Planning**: Obstacle avoidance algorithms
-- [ ] **WebSocket Support**: Real-time bidirectional communication
-- [ ] **3D Environment**: Add workspace and obstacles
-- [ ] **Recording/Playback**: Save and replay robot movements
+---
 
 ## 📄 License
 
@@ -241,4 +247,10 @@ This project is part of an assignment for **Sereact**. Please respect intellectu
 
 ---
 
-**Built with ❤️ for robotics education and development**
+## 👤 Authors
+
+- Marc Moubarak
+
+---
+
+**Built with ❤️ for robotics
