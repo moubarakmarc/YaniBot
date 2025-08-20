@@ -130,18 +130,25 @@ class UIManager {
     // Event Handlers
     async handleResetScene() {
         try {
-            this.showStatus('Resetting scene...', 'info');
-            let state = await this.api.getState();
-            // Stop automation if running
-            if (state.isMoving) {
-                await this.automation.stop();
-            }
+            this.showStatus('Restarting scene...', 'info');
+            let resetData = await this.api.reset();
+
             // Reset the scene
-            if (this.robot && this.robot.scene && this.robot.scene.reset) {
-                await this.robot.scene.reset();
+            if (this.robot.sceneManager.reset) {
+                await this.api.setCurrentAngles(resetData.targetAngles);
+                await this.api.setMovingState(false);
+                await this.api.setPauseState(false);
+                await this.api.setStopState(false);
+                await this.api.setEmergencyState(false);
+                this.updateJointDisplays(resetData.currentAngles);
+                this.updateAutomationStatus();
+                this.updateAutomationButtons();
+                this.toggleOverrideControls();
+                await this.robot.sceneManager.reset();
+                
             } else {
                 // Fallback: reload the page
-                location.reload();
+                throw new Error('Scene reset method not available');
             }
             this.showStatus('Scene reset!', 'success');
         } catch (error) {

@@ -142,7 +142,11 @@ def reset_robot():
             "success": True,
             "message": "Robot reset to home position",
             "currentAngles": robot.currentAngles,
-            "targetAngles": robot.homeAngles
+            "targetAngles": robot.homeAngles,
+            "isMoving": False,
+            "isPaused": False,
+            "isStopped": False,
+            "isEmergencyMode": False
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

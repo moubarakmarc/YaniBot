@@ -1,5 +1,5 @@
 let app = {};
-////////////////////////////////////////////////// fix order of initialization
+
 // Initialize global app object
 window.LOG_OPTIONS = {
     state: true,
@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Initialize UI first
             app.ui = new UIManager(app.robot, app.automation);
             app.ui.api = app.api; // Pass API to UI manager
+            app.ui.scene = app.scene; // Pass scene to UI manager
             await app.ui.init();
 
             app.robot.ui = app.ui; // Pass UI to robot
