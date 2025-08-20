@@ -6,7 +6,6 @@ class SceneManager {
         this.renderer = null;
         this.workstation = null;
         this.controls = null;
-        this.axesVisible = true;
     }
     
     async init() {
@@ -415,10 +414,6 @@ class WorkstationManager {
         circle.position.set(0, 0.005, 0); // Slightly above ground to avoid z-fighting
         circle.name = "RobotWorkspaceCircle";
         circleGroup.add(circle);
-        
-        // Optional: Add text label
-        const loader = new THREE.FontLoader();
-        // Note: You'd need to load a font for text. For now, just the circle.
         
         console.log("🔴 Robot workspace circle created (3m radius)");
         

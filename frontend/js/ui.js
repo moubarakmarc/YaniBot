@@ -12,7 +12,6 @@ class UIManager {
     init() {
         this.cacheElements();
         this.bindEvents();
-        this.initJointInputs();
         console.log("✅ UI Manager initialized");
     }
     
@@ -126,17 +125,6 @@ class UIManager {
 
 
         console.log("🔗 UI Events bound");
-    }
-
-    initJointInputs() {
-        const joints = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
-        
-        joints.forEach((joint, index) => {
-            const input = this.elements.jointInputs[joint];
-            const valueDisplay = this.elements.jointValues[joint];
-        });
-
-        console.log("🎚️ Joint Inputs initialized");
     }
     
     // Event Handlers

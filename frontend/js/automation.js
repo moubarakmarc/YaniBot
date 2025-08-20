@@ -88,6 +88,7 @@ class AutomationManager {
             const dropLiftPos = this.robot.positions[`${targetBin}BinLift`];
 
             // 1. Move to pick position (home → approach → pick)
+            await this.robot.moveTo(null, this.robot.positions.intermediate1, 700);
             await this.robot.moveTo(null, approachPos, 700);
             await this.robot.moveTo(null, pickPos, 700);
 

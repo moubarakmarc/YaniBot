@@ -14,8 +14,6 @@ class RobotManager {
         this.robotSegments = [];
         this.robotRoot = null;
         this.positions = this.getPresetPositions();
-        this.axisMapping = ['z', 'y', 'y', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
-        this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
         this.ui = null; // Will be set by UIManager
         this.api = null; // Will be set by APIManager
         this.RobotBuilderClass = RobotBuilderClass;
@@ -153,7 +151,6 @@ class RobotManager {
     }
 
     arraysAlmostEqual(a, b, tol = 2.0) {
-        console.log("Comparing arrays:", a, b);
         for (let i = 0; i < a.length; i++) {
             if (Math.abs(a[i] - b[i]) > tol) return false;
         }

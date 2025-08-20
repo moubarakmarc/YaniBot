@@ -1,5 +1,4 @@
 let app = {};
-let robot; // Make robot accessible
 ////////////////////////////////////////////////// fix order of initialization
 // Initialize global app object
 window.LOG_OPTIONS = {
