@@ -89,6 +89,12 @@ It provides real-time visualization, manual and automated joint control, and mot
     chmod +x build_and_run.sh
     ./build.sh
     ```
+
+2. **Run with Docker**
+    ```bash
+    chmod +x run.sh
+    ./build.sh
+    ```
     
 3. **Access the application**
     - 🌐 **Frontend**: http://localhost

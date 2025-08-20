@@ -1,7 +1,8 @@
 #!/bin/bash
 # filepath: /home/moubarakmarc/Desktop/YaniBot/build.sh
 
-echo "🐳 Building YaniBot Docker containers..."
+# This script restarts YaniBot services using Docker Compose.
+# It stops any running containers first, then starts fresh.
 
 # Test Docker Compose by running the actual command
 if docker compose version &> /dev/null; then
@@ -17,38 +18,14 @@ else
     exit 1
 fi
 
-# Function to check if containers are healthy
-check_health() {
-    echo "🔍 Checking container health..."
-    for i in {1..30}; do
-        if $COMPOSE_CMD ps | grep -q "healthy"; then
-            echo "✅ Containers are healthy!"
-            return 0
-        fi
-        echo "⏳ Waiting for containers to be healthy... ($i/30)"
-        sleep 2
-    done
-    echo "⚠️ Containers may not be fully healthy, but continuing..."
-    return 1
-}
+cd "$(dirname "$0")"
 
-# Stop existing containers
-echo "🛑 Stopping existing containers..."
-$COMPOSE_CMD down
+# Stop any running YaniBot containers
+echo "🛑 Stopping any running YaniBot containers..."
+docker compose down
 
-# Clean up old images
-echo "🧹 Cleaning up old images..."
-docker system prune -f
-
-# Build containers
-echo "🔨 Building containers..."
-if ! $COMPOSE_CMD build --no-cache; then
-    echo "❌ Build failed!"
-    exit 1
-fi
-
-# Start containers
-echo "🚀 Starting containers..."
+# Start the containers
+echo "🔄 Starting YaniBot services..."
 if ! $COMPOSE_CMD up -d; then
     echo "❌ Failed to start containers!"
     exit 1
@@ -99,3 +76,4 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     sleep 1
     $COMPOSE_CMD logs -f
 fi
+# End of script
