@@ -8,7 +8,6 @@ class AutomationManager {
         this.emergencyManager = emergencyManager;
         this.emergencyMonitorInterval = null; // For emergency monitoring
         this.currentlyHeldObject = null;
-        this.currentAction = 'Ready';
         this.cycleDelay = 2000;
         this.automationInterval = null;
         this.strategy = 'left-to-right'; // Default strategy
@@ -37,14 +36,13 @@ class AutomationManager {
         if (this.automationInterval) clearTimeout(this.automationInterval);
         this.api.setMovingState(false);
         this.api.setStopState(false);
-        this.currentAction = 'Stopped';
         this.stopEmergencyMonitor();
         console.log('✅ Automation stopped');
     }
 
     async automationLoop() {
         let state = await this.api.getState();
-        while (state.isMoving && !state.isStopped) {
+        while (!state.isStopped) {
             try {
                 const shouldContinue = await this.performCycle();
                 if (!shouldContinue) break; // Stop loop if bins are empty
@@ -67,8 +65,6 @@ class AutomationManager {
             console.log('🚫 No valid transfer pair available. Stopping automation.');
             this.ui.showStatus('Automation stopped: No objects left to move', 'warning');
             this.api.setMovingState(false);
-            this.currentAction = 'Stopped: No objects left to move';
-            if (this.ui && this.ui.updateAutomationStatus) this.ui.updateAutomationStatus();
             return false;
         }
         await this.pickAndPlace(sourceBin, targetBin);
@@ -122,7 +118,6 @@ class AutomationManager {
     }
 
     async pickObject(binName) {
-        this.currentAction = `Picking object from ${binName} bin...`;
         await this.sleep(500); // Simulate gripper closing
         this.currentlyHeldObject = this.binManager.pickupObject(binName);
         if (this.currentlyHeldObject) {
@@ -135,7 +130,6 @@ class AutomationManager {
 
     async dropObject(binName) {
         if (!this.currentlyHeldObject) throw new Error('No object to drop');
-        this.currentAction = `Dropping object in ${binName} bin...`;
         await this.sleep(500); // Simulate gripper opening
         this.binManager.dropObject(this.currentlyHeldObject, binName);
         this.detachObjectFromRobot();

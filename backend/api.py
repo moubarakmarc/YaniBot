@@ -129,7 +129,8 @@ def get_state():
         "isEmergencyMode": robot.isEmergencyMode,
         "isPaused": robot.isPaused,
         "isStopped": robot.isStopped,
-        "currentAngles": robot.currentAngles
+        "currentAngles": robot.currentAngles,
+        "homeAngles": robot.homeAngles
     }
 
 @app.post("/reset")

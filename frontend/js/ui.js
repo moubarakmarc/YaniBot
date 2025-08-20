@@ -32,8 +32,7 @@ class UIManager {
             rightBinCount: document.getElementById('right-bin-count'),
             cycleCount: document.getElementById('cycle-count'),
             automationStatus: document.getElementById('automation-status'),
-            currentAction: document.getElementById('current-action'),
-            
+
             // Joint controls
             manualJointControl: document.getElementById('manual-override'),
             jointInputs: {},
@@ -117,9 +116,8 @@ class UIManager {
                     const max = parseFloat(inputEl.max);
                     value = Math.max(min, Math.min(max, value));
                     inputEl.value = value; // Clamp value in input
-                    // Update the value display immediately
+                    // // Update the value display immediately
                     const valueDisplay = this.elements.jointValues[jointKey];
-                    if (valueDisplay) valueDisplay.textContent = `${Math.round(value)}°`;
                     // Move the robot and send to backend
                     this.handleJointInputChange(idx, value, valueDisplay);
                 }
@@ -195,8 +193,9 @@ class UIManager {
         try {
             await this.api.setPauseState(true);
             await this.api.setMovingState(false);
-            this.updatePauseResumeButtons();
-            this.toggleOverrideControls();
+            await this.updateAutomationStatus();
+            await this.updatePauseResumeButtons();
+            await this.toggleOverrideControls();
             this.showStatus('Automation paused', 'success');
             
         } catch (error) {
@@ -208,6 +207,10 @@ class UIManager {
     async handleResumeAutomation() {
         try {
             await this.api.setPauseState(false);
+            await this.api.setMovingState(true);
+            await this.updateAutomationStatus();
+            await this.toggleOverrideControls();
+            await this.updateAutomationButtons();
             this.updatePauseResumeButtons();
             this.showStatus('Automation resumed', 'success');
         } catch (error) {
@@ -277,21 +280,14 @@ class UIManager {
         }
     }
     
-    ///////////////// must configure to use state from API
-    updateAutomationStatus() {
-        let status = 'Stopped';
-        let action = 'Waiting...';
+    async updateAutomationStatus() {
+        let state = await this.api.getState();
+        const isMoving = state.isMoving;
         
-        if (this.automation.isRunning) {
-            status = this.automation.isPausedUser ? 'Paused' : 'Running';
-            action = this.automation.currentAction || 'Processing...';
-        }
-        
-        if (this.elements.automationStatus) {
-            this.elements.automationStatus.textContent = status;
-        }
-        if (this.elements.currentAction) {
-            this.elements.currentAction.textContent = action;
+        if (isMoving){
+            this.elements.automationStatus.textContent = 'Moving...';
+        } else {
+            this.elements.automationStatus.textContent = 'Idle';
         }
     }
 
@@ -344,11 +340,6 @@ class UIManager {
 
     showStatus(message, type = 'info') {
         console.log(`${type.toUpperCase()}: ${message}`);
-        
-        // Update status display
-        if (this.elements.currentAction) {
-            this.elements.currentAction.textContent = message;
-        }
         
         // Show toast notification if available
         this.showToast(message, type);

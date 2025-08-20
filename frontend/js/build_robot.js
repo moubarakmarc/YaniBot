@@ -13,8 +13,8 @@ class RobotBuilder {
     async buildRobot() {
         // Create robot root
         let state = await this.api.getState();
-        console.log("🤖 Building robot with initial angles:", state.currentAngles);
-        const initialAnglesDeg = state.currentAngles;
+        console.log("🤖 Building robot with initial angles:", state.homeAngles);
+        const initialAnglesDeg = state.homeAngles;
         const initialAngles = initialAnglesDeg.map(angle => (angle * Math.PI) / 180);
 
         this.robotRoot = new THREE.Object3D();

@@ -13,8 +13,9 @@ class RobotArm:
             4: (-120, 120), # A5: Wrist Pitch (Y-axis) 
             5: (-300, 300)  # A6: Flange Roll (X-axis)
         }
-        self.isEmergencyMode = False
-        self.isPaused = False
         self.isMoving = False
+        self.isPaused = False
         self.isStopped = False
+        self.isEmergencyMode = False
         self.currentAngles = [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]  # Default home position
+        self.homeAngles = [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]  # Home position
