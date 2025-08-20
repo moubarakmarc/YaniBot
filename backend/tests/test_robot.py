@@ -19,4 +19,5 @@ class TestRobotArm:
         assert robot.isMoving is False
         assert robot.isStopped is False
         assert robot.currentAngles == [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]
+        assert robot.homeAngles == [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]
     
