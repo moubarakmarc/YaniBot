@@ -95,7 +95,6 @@ class RobotManager {
                     return;
                 }
                 this.setJointAngles(path[i]);
-                console.log(`Moving to angles: ${path[i]}`);
                 if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
                 await this.api.setCurrentAngles(path[i]);
                 await this.sleep(duration / path.length);

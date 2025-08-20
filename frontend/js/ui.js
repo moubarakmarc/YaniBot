@@ -210,8 +210,9 @@ class UIManager {
     async handleResetJoints() {
         try {
             this.showStatus('Resetting robot...', 'info');
+            const forcePause = false; // No pause during reset
             let resetData = await this.api.reset();
-            await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000);
+            await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000, forcePause);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);
