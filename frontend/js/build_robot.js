@@ -235,11 +235,35 @@ class RobotBuilder {
         this.joints.push(joint6);
         
         // Simple TCP marker
-        const tcpGeometry = new THREE.SphereGeometry(0.01, 8, 8);
-        const tcpMaterial = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+        const tcpGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const tcpMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
         const tcp = new THREE.Mesh(tcpGeometry, tcpMaterial);
         tcp.position.z = 0.02;
         joint6.add(tcp);
+
+        // Add a simple two-fingered claw (gripper)
+        const fingerLength = 0.08;
+        const fingerWidth = 0.015;
+        const fingerHeight = 0.025;
+        const fingerOffset = 0.025;
+
+        // Left finger
+        const leftFingerGeometry = new THREE.BoxGeometry(fingerWidth, fingerHeight, fingerLength);
+        const fingerMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.6, roughness: 0.4 });
+        const leftFinger = new THREE.Mesh(leftFingerGeometry, fingerMaterial);
+        leftFinger.position.x = -fingerOffset;
+        leftFinger.position.z = 0.06 + fingerLength / 2;
+        leftFinger.castShadow = true;
+        leftFinger.receiveShadow = true;
+        joint6.add(leftFinger);
+
+        // Right finger
+        const rightFinger = new THREE.Mesh(leftFingerGeometry, fingerMaterial);
+        rightFinger.position.x = fingerOffset;
+        rightFinger.position.z = 0.06 + fingerLength / 2;
+        rightFinger.castShadow = true;
+        rightFinger.receiveShadow = true;
+        joint6.add(rightFinger);
         
         return joint6;
     }
