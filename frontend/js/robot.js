@@ -15,7 +15,6 @@ class RobotManager {
         this.robotRoot = null;
         this.positions = this.getPresetPositions();
         this.axisMapping = ['z', 'y', 'y', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
-        this.currentAngles = [0.0, 30.0, 55.0, 0.0, 0.0, 0.0];
         this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
         this.ui = null; // Will be set by UIManager
         this.api = null; // Will be set by APIManager
@@ -77,7 +76,6 @@ class RobotManager {
             for (let i = 0; i < path.length; i++) {
                 if (forcePause) {
                     await this.waitWhilePaused();
-                    return;
                 }
                 const limitCheck = await this.api.check_joint_limits(path[i]);
                 if (limitCheck && limitCheck.success === false) {
@@ -89,6 +87,7 @@ class RobotManager {
                     return;
                 }
                 this.setJointAngles(path[i]);
+                console.log(`Moving to angles: ${path[i]}`);
                 if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
                 await this.api.setCurrentAngles(path[i]);
                 await this.sleep(duration / path.length);
