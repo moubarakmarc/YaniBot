@@ -54,12 +54,12 @@ class RobotManager {
         let state = await this.api.getState();
         const currentAngles = state.currentAngles;
         const targetAngles = [...currentAngles];
-        const forcePause = false; // No need to force pause for single joint movement
+        const manualIntervention = true; // No need to force pause for single joint movement
         targetAngles[jointIndex] = value;
-        await this.moveTo(currentAngles, targetAngles, duration, forcePause);
+        await this.moveTo(currentAngles, targetAngles, duration, manualIntervention);
     }
 
-    async moveTo(startAngles = null, targetAngles, duration = 2000, forcePause = true) {
+    async moveTo(startAngles = null, targetAngles, duration = 2000, manualIntervention = false) {
         
         try {
             if (startAngles === null) {
@@ -74,7 +74,7 @@ class RobotManager {
             // Animate visual robot
             let i = 0;
             while (i < path.length) {
-                if (forcePause) {
+                if (!manualIntervention) {
                     await this.waitWhilePaused();
                     let state = await this.api.getState();
                     let currentAngles = state.currentAngles;
