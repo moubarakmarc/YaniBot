@@ -13,11 +13,7 @@ class RobotManager {
         this.joints = [];
         this.robotSegments = [];
         this.robotRoot = null;
-        this.currentAngles = [0.0, -30.0, 40.0, 0.0, -15.0, 0.0];
         this.positions = this.getPresetPositions();
-        this.axisMapping = ['z', 'y', 'y', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
-        this.isMoving = false;
-        this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
         this.ui = null; // Will be set by UIManager
         this.api = null; // Will be set by APIManager
         this.RobotBuilderClass = RobotBuilderClass;
@@ -35,11 +31,21 @@ class RobotManager {
         this.scene = this.sceneManager.scene;
         // Use RobotBuilder to build the robot
         const builder = new this.RobotBuilderClass(this.scene);
-        const { robotRoot, joints, robotSegments } = builder.buildRobot();
+        builder.api = this.api; // Pass API to builder
+        const { robotRoot, joints, robotSegments } = await builder.buildRobot();
         this.robotRoot = robotRoot;
         this.joints = joints;
-        this.robotSegments = robotSegments;     
-        
+        this.robotSegments = robotSegments; 
+        const anglesDeg = this.joints.map(joint => {
+            const axis = joint.userData.axis;
+            let radians = 0;
+            if (axis === 'x') radians = joint.rotation.x;
+            else if (axis === 'y') radians = joint.rotation.y;
+            else if (axis === 'z') radians = joint.rotation.z;
+            return THREE.MathUtils.radToDeg(radians);
+        });
+        this.ui.updateJointDisplays(anglesDeg);
+
         console.log("🤖 Enhanced ABB IRB6600 robot initialized");
     }
     
@@ -48,58 +54,131 @@ class RobotManager {
         let state = await this.api.getState();
         const currentAngles = state.currentAngles;
         const targetAngles = [...currentAngles];
+        const manualIntervention = true; // No need to force pause for single joint movement
         targetAngles[jointIndex] = value;
-        await this.moveTo(currentAngles, targetAngles, duration);
+        await this.moveTo(currentAngles, targetAngles, duration, manualIntervention);
     }
 
-    async moveTo(startAngles = null, targetAngles, duration = 2000) {
-        while (this.isMoving) {
-            console.warn('Robot is already moving, ignoring new command');
-            await this.sleep(50);
-        }
+    async moveTo(startAngles = null, targetAngles, duration = 2000, manualIntervention = false) {
         
         try {
             if (startAngles === null) {
                 let state = await this.api.getState();
                 startAngles = state.currentAngles;
             }
-            const path = await this.api.getInterpolatedPath(startAngles, targetAngles, 30);
+
+            let path = await this.api.getInterpolatedPath(startAngles, targetAngles, 30);
             
+            await this.api.setMovingState(true);
+            await this.ui.updateAutomationStatus();
+
             // Animate visual robot
-            await this.animateToPosition(path, duration);
+            let i = 0;
+            while (i < path.length) {
+                if (!manualIntervention) {
+                    await this.waitWhilePaused();
+                    let state = await this.api.getState();
+                    let currentAngles = state.currentAngles;
+                    if (!this.arraysAlmostEqual(currentAngles, path[i])) {
+                        console.warn("Robot moved during pause, re-interpolating path...");
+                        if(currentAngles[1] > 50.0) {
+                            console.warn("Robot is too low, moving to safer position...");
+                            await this.moveToSaferPosition(currentAngles, duration);
+                            state = await this.api.getState();
+                            currentAngles = state.currentAngles;
+                        }
+                        // Recalculate path with current angles
+                        path = await this.api.getInterpolatedPath(currentAngles, targetAngles, 30);
+                        i = 0; // Reset index to start from the new path
+                        continue; // Restart the loop with the new path
+                    }
+                }
+                const limitCheck = await this.api.check_joint_limits(path[i]);
+                if (limitCheck && limitCheck.success === false) {
+                    console.warn('❌ Joint limit violation detected, stopping animation');
+                    this.ui.showStatus(
+                        'Joints are at their limits. Movement would damage the robot.',
+                        'error'
+                    );
+                    return;
+                }
+                this.setJointAngles(path[i]);
+                if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
+                await this.api.setCurrentAngles(path[i]);
+                await this.sleep(duration / path.length);
+                i++;
+            }
 
             console.log('✅ Robot movement finished');
+            await this.api.setMovingState(false);
+            await this.ui.updateAutomationStatus();            
             
         } catch (error) {
             console.error('❌ Robot movement failed:', error);
             throw error;
         } finally {
-            this.isMoving = false;
+            this.api.setMovingState(false);
+            await this.ui.updateAutomationStatus();
         }
     }
 
-    async animateToPosition(path, duration = 2000) {
-        if (!Array.isArray(path) || path.length === 0) return;
-        // Animate through the path
-        for (let i = 0; i < path.length; i++) {
-            await this.waitWhilePaused();
-            const limitCheck = await this.api.check_joint_limits(path[i]);
-            if (limitCheck && limitCheck.success === false) {
-                console.warn('❌ Joint limit violation detected, stopping animation');
-                this.ui.showStatus(
-                    'Joints are at their limits. Movement would damage the robot.',
-                    'error'
-                );
-                return;
-            }
+    async moveToSaferPosition(startAngles, duration = 2000, manualIntervention = false) {
+        console.log('🤖 Moving robot to safer position...');
+
+        try {
+            let saferAngles = [...startAngles];
+            saferAngles[1] = 45;
+            let pathSafer = await this.api.getInterpolatedPath(startAngles, saferAngles, 30);
             await this.api.setMovingState(true);
-            this.setJointAngles(path[i]);
-            if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
-            await this.api.setCurrentAngles(path[i]);
-            await this.sleep(duration / path.length);
+            await this.ui.updateAutomationStatus();
+            // Animate visual robot
+            let i = 0;
+            while (i < pathSafer.length) {
+                if (!manualIntervention) {
+                    await this.waitWhilePaused();
+                    let state = await this.api.getState();
+                    let currentAngles = state.currentAngles;
+                    if (!this.arraysAlmostEqual(currentAngles, pathSafer[i])) {
+                        console.warn("Robot moved during pause, re-interpolating path...");
+                        if(currentAngles[1] > 50) {
+                            await this.moveToSaferPosition(currentAngles, duration);
+                            state = await this.api.getState();
+                            currentAngles = state.currentAngles;
+                        }
+                        // Recalculate path with current angles
+                        pathSafer = await this.api.getInterpolatedPath(currentAngles, saferAngles, 30);
+                        i = 0; // Reset index to start from the new path
+                        continue; // Restart the loop with the new path
+                    }
+                }
+                const limitCheck = await this.api.check_joint_limits(pathSafer[i]);
+                if (limitCheck && limitCheck.success === false) {
+                    console.warn('❌ Joint limit violation detected, stopping animation');
+                    this.ui.showStatus(
+                        'Joints are at their limits. Movement would damage the robot.',
+                        'error'
+                    );
+                    return;
+                }
+                this.setJointAngles(pathSafer[i]);
+                if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(pathSafer[i]);
+                await this.api.setCurrentAngles(pathSafer[i]);
+                await this.sleep(duration / pathSafer.length);
+                i++;
+                }
+            console.log('✅ Robot movement to safer position finished');
+            await this.api.setMovingState(false);
+            await this.ui.updateAutomationStatus();            
+            
+        } catch (error) {
+            console.error('❌ Robot movement to safer position failed:', error);
+            throw error;
+        } finally {
+            this.api.setMovingState(false);
+            await this.ui.updateAutomationStatus();
         }
-
     }
+
     
     setJointAngles(angles) {
         for (let i = 0; i < Math.min(angles.length, this.joints.length); i++) {
@@ -107,6 +186,7 @@ class RobotManager {
         }
     }
 
+    // Moving Function
     async updateJointRotation(jointIndex, angle) {
 
         if (!this.joints[jointIndex]) {
@@ -117,23 +197,27 @@ class RobotManager {
         const joint = this.joints[jointIndex];
         const radians = (angle * Math.PI) / 180;
         const axis = joint.userData.axis;
-        
-        await this.waitWhilePaused();
-        
 
         // Apply rotation based on axis
         switch (axis) {
-            case 'x': // Roll rotation
+            case 'x':
                 joint.rotation.x = radians;
                 break;
-            case 'y': // Pitch rotation 
+            case 'y': 
                 joint.rotation.y = radians;
                 break;
-            case 'z': // Yaw rotation
+            case 'z':
                 joint.rotation.z = radians;
                 break;
             default:
                 console.warn(`Unknown axis: ${axis} for joint ${jointIndex}`);
+        }
+        return true;
+    }
+
+    arraysAlmostEqual(a, b, tol = 2.0) {
+        for (let i = 0; i < a.length; i++) {
+            if (Math.abs(a[i] - b[i]) > tol) return false;
         }
         return true;
     }

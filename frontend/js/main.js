@@ -1,6 +1,5 @@
 let app = {};
-let robot; // Make robot accessible
-
+////////////////////////////////////////////////// fix order of initialization
 // Initialize global app object
 window.LOG_OPTIONS = {
     state: true,
@@ -57,73 +56,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             app.scene = new SceneManager();
             await app.scene.init();
             
-            // Verify scene is properly initialized
-            if (!app.scene.scene) {
-                throw new Error("Scene initialization failed - scene object is null");
-            }
-            
-            updateLoadingStatus("Building robot model...");
-            
-            // Initialize robot with the scene
+            app.api = new APIManager();
+            await app.api.init();
+
             app.robot = new RobotManager(app.scene, RobotBuilder);
-            await app.robot.init();
-            robot = app.robot; // Make robot globally accessible
-            window.robot = robot; // For debugging
-            
-            updateLoadingStatus("Setting up automation...");
-            
-            // Initialize automation
+            app.robot.api = app.api; // Pass API to robot manager
+
             app.automation = new AutomationManager(app.robot);
-            await app.automation.init();
-            
-            updateLoadingStatus("Configuring user interface...");
+            app.automation.api = app.api; // Pass API to automation manager
             
             // Initialize UI first
             app.ui = new UIManager(app.robot, app.automation);
-            app.ui.init()
-            app.automation.ui = app.ui; // Pass UI to automation manager
+            app.ui.api = app.api; // Pass API to UI manager
+            await app.ui.init();
+
             app.robot.ui = app.ui; // Pass UI to robot
-            
-            // Then initialize emergency system with UI reference
-            if (typeof EmergencyManager !== 'undefined') {
-                app.emergency = new EmergencyManager(app.scene, app.robot);
-                app.emergency.uiManager = app.ui; // Pass UI manager to emergency manager
+            app.automation.ui = app.ui; // Pass UI to automation manager
 
-                // Update UI manager with emergency reference
-                app.ui.emergencyManager = app.emergency;
-                
-                console.log("✅ Emergency Manager initialized");
-            } else {
-                console.warn("⚠️ EmergencyManager not available - skipping emergency system");
-                app.emergency = null;
-            }
+            await app.robot.init();
 
-            // Update UI manager and AutomationManager with emergency reference
-            app.ui.emergencyManager = app.emergency;
-            app.automation.emergencyManager = app.emergency;
+            await app.automation.init();
 
-            updateLoadingStatus("Connecting to backend...");
-            
-            // Initialize API
-            try {
-                app.api = new APIManager();
-                app.robot.api = app.api; // Pass API to robot manager
-                app.automation.api = app.api; // Pass API to automation manager
-                app.ui.api = app.api; // Pass API to UI manager
-                app.emergency.api = app.api; // Pass API to emergency manager if available
-                
-                // Initialize API manager
-                await app.api.init();
-                console.log("✅ API Manager initialized");
-            } catch (apiError) {
-                console.warn("⚠️ API Manager failed to initialize:", apiError);
-                app.api = null;
-            }
+            app.emergency = new EmergencyManager(app.scene, app.robot);
+            app.emergency.ui = app.ui; // Pass UI manager to emergency manager
+            app.ui.emergencyManager = app.emergency; // Update UI manager with emergency reference
+            app.automation.emergencyManager = app.emergency; // Update automation manager with emergency reference
+            app.emergency.api = app.api; // Pass API to emergency manager
             
             updateLoadingStatus("YaniBot ready!");
             
             console.log("✅ YaniBot Initialized Successfully");
-            console.log("📊 App components:", {
+            console.log("📊 App components:", { /// add more
                 scene: !!app.scene,
                 robot: !!app.robot,
                 automation: !!app.automation,
@@ -135,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Hide loading screen - now using the defined function
             setTimeout(() => {
                 hideLoadingScreen();
-            }, 1000);
+            }, 3000);
             
             // Make app globally available for debugging
             window.app = app;
@@ -149,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Hide loading screen even on error
             setTimeout(() => {
                 hideLoadingScreen();
-            }, 2000);
+            }, 3000);
             
             // Show error in UI
             const errorDiv = document.createElement('div');

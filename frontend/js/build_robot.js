@@ -4,10 +4,19 @@ class RobotBuilder {
         this.joints = [];
         this.robotSegments = [];
         this.robotRoot = null;
+        this.api = null;
     }
 
-    buildRobot() {
+
+
+
+    async buildRobot() {
         // Create robot root
+        let state = await this.api.getState();
+        console.log("🤖 Building robot with initial angles:", state.homeAngles);
+        const initialAnglesDeg = state.homeAngles;
+        const initialAngles = initialAnglesDeg.map(angle => (angle * Math.PI) / 180);
+
         this.robotRoot = new THREE.Object3D();
         this.robotRoot.name = "RobotRoot";
         
@@ -15,14 +24,16 @@ class RobotBuilder {
 
         // Add robot root to scene
         this.scene.add(this.robotRoot);
+
+
         
         // Build robot segments in order
-        this.createBase();
-        this.createShoulder();
-        this.createElbow();
-        this.createWrist1();
-        this.createWrist2();
-        this.createFlange();
+        this.createBase(initialAngles);
+        this.createShoulder(initialAngles);
+        this.createElbow(initialAngles);
+        this.createWrist1(initialAngles);
+        this.createWrist2(initialAngles);
+        this.createFlange(initialAngles);
         this.addRobotLighting();
         
         console.log(`🔧 Robot built with ${this.joints.length} joints`);
@@ -33,8 +44,8 @@ class RobotBuilder {
             robotSegments: this.robotSegments
         };
     }
-    
-    createBase() {
+
+    createBase(initialAngles) {
         // Simple cylindrical base
         const baseGeometry = new THREE.CylinderGeometry(0.3, 0.35, 2, 16);
         const baseMaterial = new THREE.MeshStandardMaterial({ 
@@ -56,7 +67,8 @@ class RobotBuilder {
         joint1.position.z = 1;
         joint1.userData = { axis: 'z', jointIndex: 0 };
         joint1.name = "Joint1";
-        
+        joint1.rotation.z = initialAngles[0];
+
         this.robotRoot.add(joint1);
         this.joints.push(joint1);
         
@@ -64,7 +76,7 @@ class RobotBuilder {
     }
     
     // Update createShoulder() - rotate Joint 2
-    createShoulder() {
+    createShoulder(initialAngles) {
         const parentJoint = this.joints[0];
         
         // Simple box shoulder
@@ -87,7 +99,8 @@ class RobotBuilder {
         joint2.position.set(0, 0, 0.5);
         joint2.userData = { axis: 'x', jointIndex: 1 };
         joint2.name = "Joint2";
-        
+        joint2.rotation.x = initialAngles[1];
+
         parentJoint.add(joint2);
         this.joints.push(joint2);
         
@@ -95,7 +108,7 @@ class RobotBuilder {
     }
     
     // Update createElbow() - rotate Joint 3
-    createElbow() {
+    createElbow(initialAngles) {
         const parentJoint = this.joints[1];
         
         // Simple upper arm
@@ -118,6 +131,7 @@ class RobotBuilder {
         joint3.position.set(0, 0, 0.8);
         joint3.userData = { axis: 'x', jointIndex: 2 };
         joint3.name = "Joint3";
+        joint3.rotation.x = initialAngles[2];
         
         parentJoint.add(joint3);
         this.joints.push(joint3);
@@ -126,7 +140,7 @@ class RobotBuilder {
     }
     
     // Update createWrist1() - rotate Joint 4
-    createWrist1() {
+    createWrist1(initialAngles) {
         const parentJoint = this.joints[2];
         
         // Simple forearm
@@ -149,6 +163,7 @@ class RobotBuilder {
         joint4.position.set(0, 0, 0.6);
         joint4.userData = { axis: 'z', jointIndex: 3 };
         joint4.name = "Joint4";
+        joint4.rotation.z = initialAngles[3];
         
         parentJoint.add(joint4);
         this.joints.push(joint4);
@@ -157,7 +172,7 @@ class RobotBuilder {
     }
     
     // Update createWrist2() - rotate Joint 5
-    createWrist2() {
+    createWrist2(initialAngles) {
         const parentJoint = this.joints[3];
         
         // Simple wrist
@@ -181,7 +196,8 @@ class RobotBuilder {
         joint5.position.set(0, 0, 0.2);
         joint5.userData = { axis: 'x', jointIndex: 4 };
         joint5.name = "Joint5";
-        
+        joint5.rotation.x = initialAngles[4];
+
         parentJoint.add(joint5);
         this.joints.push(joint5);
         
@@ -189,7 +205,7 @@ class RobotBuilder {
     }
     
     // Update createFlange() - rotate Joint 6
-    createFlange() {
+    createFlange(initialAngles) {
         const parentJoint = this.joints[4];
         
         // Simple flange
@@ -213,7 +229,8 @@ class RobotBuilder {
         joint6.position.set(0, 0, 0.05);
         joint6.userData = { axis: 'z', jointIndex: 5 };
         joint6.name = "Joint6";
-        
+        joint6.rotation.z = initialAngles[5];
+
         parentJoint.add(joint6);
         this.joints.push(joint6);
         

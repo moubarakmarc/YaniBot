@@ -36,7 +36,7 @@ check_health() {
 echo "🛑 Stopping existing containers..."
 $COMPOSE_CMD down
 
-# Clean up old images (optional)
+# Clean up old images
 echo "🧹 Cleaning up old images..."
 docker system prune -f
 
