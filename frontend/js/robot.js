@@ -68,14 +68,24 @@ class RobotManager {
                 let state = await this.api.getState();
                 startAngles = state.currentAngles;
             }
-            const path = await this.api.getInterpolatedPath(startAngles, targetAngles, 30);
+            let path = await this.api.getInterpolatedPath(startAngles, targetAngles, 30);
             
             await this.api.setMovingState(true);
             await this.ui.updateAutomationStatus();
+
             // Animate visual robot
-            for (let i = 0; i < path.length; i++) {
+            let i = 0;
+            while (i < path.length) {
                 if (forcePause) {
                     await this.waitWhilePaused();
+                    let state = await this.api.getState();
+                    let currentAngles = state.currentAngles;
+                    if (!this.arraysAlmostEqual(currentAngles, path[i])) {
+                        console.warn("Robot moved during pause, re-interpolating path...");
+                        path = await this.api.getInterpolatedPath(currentAngles, targetAngles, 30);
+                        i = 0; // Reset index to start from the new path
+                        continue; // Restart the loop with the new path
+                    }
                 }
                 const limitCheck = await this.api.check_joint_limits(path[i]);
                 if (limitCheck && limitCheck.success === false) {
@@ -91,6 +101,7 @@ class RobotManager {
                 if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
                 await this.api.setCurrentAngles(path[i]);
                 await this.sleep(duration / path.length);
+                i++;
             }
 
             console.log('✅ Robot movement finished');
@@ -137,6 +148,14 @@ class RobotManager {
                 break;
             default:
                 console.warn(`Unknown axis: ${axis} for joint ${jointIndex}`);
+        }
+        return true;
+    }
+
+    arraysAlmostEqual(a, b, tol = 2.0) {
+        console.log("Comparing arrays:", a, b);
+        for (let i = 0; i < a.length; i++) {
+            if (Math.abs(a[i] - b[i]) > tol) return false;
         }
         return true;
     }
