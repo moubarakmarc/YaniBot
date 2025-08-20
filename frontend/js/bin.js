@@ -19,7 +19,7 @@ class BinManager {
         this.rightBin = [];
     }
 
-    isEmpty(bin = 'left') {
+    isEmpty(bin = null) {
         if (bin === 'left') return this.leftBin.length === 0;
         if (bin === 'right') return this.rightBin.length === 0;
         return this.leftBin.length === 0 && this.rightBin.length === 0;

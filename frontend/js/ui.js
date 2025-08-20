@@ -89,7 +89,7 @@ class UIManager {
         }
 
         // Strategy selection event
-        this.elements.strategySelect?.addEventListener('change', (e) => {
+        this.elements.strategySelect?.addEventListener('click', (e) => {
             this.automation.strategy = e.target.value;
             console.log(`Automation strategy set to: ${this.automation.strategy}`);
         });
