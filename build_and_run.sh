@@ -17,6 +17,9 @@ else
     exit 1
 fi
 
+# Handle Ctrl+C gracefully
+trap 'echo ""; echo "🛑 Caught interrupt. Stopping containers..."; $COMPOSE_CMD down; exit 0' INT
+
 # Function to check if containers are healthy
 check_health() {
     echo "🔍 Checking container health..."

@@ -20,9 +20,12 @@ fi
 
 cd "$(dirname "$0")"
 
+# Handle Ctrl+C gracefully
+trap 'echo ""; echo "🛑 Caught interrupt. Stopping containers..."; $COMPOSE_CMD down; exit 0' INT
+
 # Stop any running YaniBot containers
 echo "🛑 Stopping any running YaniBot containers..."
-docker compose down
+$COMPOSE_CMD down
 
 # Start the containers
 echo "🔄 Starting YaniBot services..."
