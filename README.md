@@ -84,19 +84,13 @@ It provides real-time visualization, manual and automated joint control, and mot
     cd YaniBot
     ```
 
-2. **Build and run with Docker (first time)**
+2. **Build and run with Docker**
     ```bash
-    chmod +x build.sh
+    chmod +x build_and_run.sh
     ./build.sh
     ```
-
-3. **Restart the app after reboot or to restart cleanly**
-    ```bash
-    chmod +x run.sh
-    ./run.sh
-    ```
     
-4. **Access the application**
+3. **Access the application**
     - 🌐 **Frontend**: http://localhost
     - 🔧 **Backend API**: http://localhost:8000
     - 📖 **API Docs**: http://localhost:8000/docs

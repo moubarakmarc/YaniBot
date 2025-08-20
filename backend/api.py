@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from robot import RobotArm
-from typing import Optional, List, Union
+from typing import List
 import os
 import uvicorn
 import numpy as np
@@ -111,18 +111,11 @@ def health_check():
 @app.get("/state")
 def get_state():
     """
-    Retrieve the current angles of the robot.
-    This endpoint returns the current angles of the robot's joints.
+    Retrieve the current state of the robot.
+    This endpoint returns the current state including moving, emergency, paused, stopped flags, and joint angles.
     
     Returns:
-        dict: A dictionary containing the current angles of the robot's joints.
-    
-    Note:
-        The actual implementation of retrieving current angles is commented out.
-        Uncomment and implement the logic in the RobotArm class to use this endpoint.
-    
-    Raises:
-        HTTPException: If the robot's current angles cannot be retrieved.
+        dict: A dictionary containing the robot's state and joint angles.
     """
     return {
         "isMoving": robot.isMoving,
@@ -145,12 +138,11 @@ def reset_robot():
         HTTPException: If the robot fails to move to the home position.
     """
     try:
-        home_position = [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]
         return {
             "success": True,
             "message": "Robot reset to home position",
             "currentAngles": robot.currentAngles,
-            "targetAngles": home_position
+            "targetAngles": robot.homeAngles
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
