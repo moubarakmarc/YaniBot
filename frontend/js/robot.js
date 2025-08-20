@@ -13,9 +13,9 @@ class RobotManager {
         this.joints = [];
         this.robotSegments = [];
         this.robotRoot = null;
-        this.currentAngles = [0.0, -30.0, 40.0, 0.0, -15.0, 0.0];
         this.positions = this.getPresetPositions();
         this.axisMapping = ['z', 'y', 'y', 'x', 'y', 'x']; // ABB IRB6600 axis mapping
+        this.currentAngles = [0.0, 30.0, 55.0, 0.0, 0.0, 0.0];
         this.isMoving = false;
         this.backendUrl = window.ENV.BACKEND_URL; // Use environment variable for backend URL
         this.ui = null; // Will be set by UIManager
@@ -35,11 +35,21 @@ class RobotManager {
         this.scene = this.sceneManager.scene;
         // Use RobotBuilder to build the robot
         const builder = new this.RobotBuilderClass(this.scene);
-        const { robotRoot, joints, robotSegments } = builder.buildRobot();
+        builder.api = this.api; // Pass API to builder
+        const { robotRoot, joints, robotSegments } = await builder.buildRobot();
         this.robotRoot = robotRoot;
         this.joints = joints;
-        this.robotSegments = robotSegments;     
-        
+        this.robotSegments = robotSegments; 
+        const anglesDeg = this.joints.map(joint => {
+            const axis = joint.userData.axis;
+            let radians = 0;
+            if (axis === 'x') radians = joint.rotation.x;
+            else if (axis === 'y') radians = joint.rotation.y;
+            else if (axis === 'z') radians = joint.rotation.z;
+            return THREE.MathUtils.radToDeg(radians);
+        });
+        this.ui.updateJointDisplays(anglesDeg);
+
         console.log("🤖 Enhanced ABB IRB6600 robot initialized");
     }
     
