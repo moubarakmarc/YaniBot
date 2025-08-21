@@ -166,4 +166,21 @@ class APIManager {
             return null;
         }
     }
+
+    async setSafetyMode(isSafety) {
+        try {
+            const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.SAFETY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_emergency: isSafety })
+            });
+            const data = await response.json();
+            if (window.LOG_OPTIONS.safetyMode) console.log('setSafetyMode response:', data);
+            if (!response.ok) throw new Error('Failed to set safety mode');
+            return data;
+        } catch (error) {
+            console.warn('⚠️ Failed to set safety mode:', error.message);
+            return null;
+        }
+    }
 }

@@ -122,6 +122,7 @@ def get_state():
         "isEmergencyMode": robot.isEmergencyMode,
         "isPaused": robot.isPaused,
         "isStopped": robot.isStopped,
+        "isSafetyMode": robot.isSafetyMode,
         "currentAngles": robot.currentAngles,
         "homeAngles": robot.homeAngles
     }
@@ -315,6 +316,24 @@ def set_emergency_state(request: EmergencyStateRequest):
     """
     robot.isEmergencyMode = request.is_emergency
     return {"success": True, "isEmergencyMode": robot.isEmergencyMode}
+
+@app.post("/safety")
+def set_safety_mode(request: EmergencyStateRequest):
+    """
+    Set the safety mode of the robot.
+    This endpoint allows the frontend to set the safety mode of the robot.
+    
+    Args:
+        request (EmergencyStateRequest): Contains the safety mode state to set.
+    
+    Returns:
+        dict: A dictionary containing the success status and the current safety mode state.
+    
+    Raises:
+        HTTPException: If the request is invalid or if an error occurs.
+    """
+    robot.isSafetyMode = request.is_emergency
+    return {"success": True, "isSafetyMode": robot.isSafetyMode}
 
 # For development server
 if __name__ == "__main__":

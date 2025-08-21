@@ -140,6 +140,7 @@ class UIManager {
                 await this.api.setPauseState(false);
                 await this.api.setStopState(false);
                 await this.api.setEmergencyState(false);
+                await this.api.setSafetyMode(false);
                 this.updateJointDisplays(resetData.currentAngles);
                 this.updateAutomationStatus();
                 this.updateAutomationButtons();
@@ -235,6 +236,11 @@ class UIManager {
             return;
         }
 
+        if (state.isSafetyMode) {
+            this.showStatus('Robot is in safety mode! Clear safety before moving joints.', 'error');
+            return;
+        }
+        
         // Update display immediately for responsiveness
         valueDisplay.textContent = `${Math.round(angle)}°`;
         

@@ -95,7 +95,7 @@ class EmergencyManager {
                 this.movableObject.position.z = intersection.z;
                 this.movableObject.position.y = 0.05; // Keep above ground
                 
-                this.checkEmergencyZone();
+                this.checkSafetyZone();
             }
         } else {
             // Check for hover effect
@@ -120,7 +120,6 @@ class EmergencyManager {
             this.isDragging = false;
             this.movableObject.material = this.normalMaterial;
             this.renderer.domElement.style.cursor = 'default';
-            console.log("this.sceneManager", this.sceneManager);
             if (this.sceneManager) { // Enable controls while dragging
                 this.sceneManager.manualControlsEnabled = true;
                 if (typeof this.sceneManager.resetManualControls === 'function') {
@@ -130,33 +129,57 @@ class EmergencyManager {
             console.log("📦 Stopped dragging square");
         }
     }
-    
-    async checkEmergencyZone() {
-        // Calculate distance from robot base (0,0,0)
-        const distance = Math.sqrt(
+
+    async checkSafetyZone() {
+        // Calculate distance of object from robot base (0,0,0)
+        this.distanceObject = Math.sqrt(
             this.movableObject.position.x ** 2 + 
             this.movableObject.position.z ** 2
         );
+
         
         let state = await this.api.getState();
-        const prevEmergencyState = state.isEmergencyMode;
-        const currEmergencyState = distance <= this.EMERGENCY_RADIUS;
+        const prevsafetyState = state.isSafetyMode;
+        const currSafetyState = this.distanceObject <= this.EMERGENCY_RADIUS;
 
         // Emergency state changed
-        if (currEmergencyState !== prevEmergencyState) {
-            if (currEmergencyState) {
-                this.activateEmergencyMode();
+        if (currSafetyState !== prevsafetyState) {
+            if (currSafetyState) {
+                this.activateSafetyMode();
             } else {
-                this.deactivateEmergencyMode();
+                this.deactivateSafetyMode();
             }
         }
     }
-    
-    activateEmergencyMode() {
-        console.log("🚨 EMERGENCY MODE TRIGGERED!");
-        
+
+    activateSafetyMode() {
+        console.log("🚨 SAFETY MODE ACTIVATED!");
+        this.api.setSafetyMode(true);
         // Change square color to red
         this.movableObject.material.color.setHex(0xFF0000);
+        this.api.setSafetyMode(true);
+
+        // Show safety UI
+        this.showSafetyUI();
+
+    }
+
+    async deactivateSafetyMode() {
+        let state = await this.api.getState();
+        console.log("✅ SAFETY MODE DEACTIVATED");
+        
+        // Change square color back to gold
+        this.movableObject.material.color.setHex(0xFFD700);
+        // Hide safety UI
+        this.hideSafetyUI();
+        
+        if (state.isSafetyMode) {
+            this.api.setSafetyMode(false);
+        }
+    }
+
+    activateEmergencyMode() {
+        console.log("🚨 EMERGENCY MODE TRIGGERED!");
         
         this.api.setEmergencyState(true)
         
@@ -165,12 +188,10 @@ class EmergencyManager {
 
         this.toggleEmergencyResumeButtons();
     }
-    
+
     async deactivateEmergencyMode() {
+
         console.log("✅ EMERGENCY MODE DEACTIVATED");
-        
-        // Change square color back to gold
-        this.movableObject.material.color.setHex(0xFFD700);
         
         // Hide emergency UI
         this.hideEmergencyUI();
@@ -181,7 +202,7 @@ class EmergencyManager {
             this.api.setEmergencyState(false);
         }
 
-        this.toggleEmergencyResumeButtons(); 
+        this.toggleEmergencyResumeButtons();
     }
     
     showEmergencyUI() {
@@ -228,10 +249,53 @@ class EmergencyManager {
         }
     }
 
+    showSafetyUI() {
+        // Create or show safety warning UI
+        let safetyDiv = document.getElementById('safety-warning');
+        if (!safetyDiv) {
+            safetyDiv = document.createElement('div');
+            safetyDiv.id = 'safety-warning';
+            safetyDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #ff4444;
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 18px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    animation: pulse 1s infinite;
+                ">
+                    🚨 SAFETY WARNING 🚨
+                </div>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.7; }
+                        100% { opacity: 1; }
+                    }
+                </style>
+            `;
+            document.body.appendChild(safetyDiv);
+        }
+        safetyDiv.style.display = 'block';
+    }
+
+    hideSafetyUI() {
+        const safetyDiv = document.getElementById('safety-warning');
+        if (safetyDiv) {
+            safetyDiv.style.display = 'none';
+        }
+    }
+
     async toggleEmergencyResumeButtons() {
         const emergencyBtn = document.getElementById('emergencyStop');
         const resumeEbtn = document.getElementById('resumeEmergency');
-        if (!emergencyBtn || !resumeEbtn) return;
 
         let state = await this.api.getState();
         if (state.isEmergencyMode) {

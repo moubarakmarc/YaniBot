@@ -10,7 +10,8 @@ window.LOG_OPTIONS = {
     currentAngles: true,
     stopState: true,
     pauseState: true,
-    emergencyState: true
+    emergencyState: true,
+    safetyMode: true
 };
 
 // Update loading status if available

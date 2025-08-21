@@ -17,5 +17,6 @@ class RobotArm:
         self.isPaused = False
         self.isStopped = False
         self.isEmergencyMode = False
+        self.isSafetyMode = False
         self.currentAngles = [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]  # Default home position
         self.homeAngles = [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]  # Home position

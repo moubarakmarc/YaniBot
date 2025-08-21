@@ -26,6 +26,7 @@ window.ENV = {
         INTERPOLATE: '/interpolate',
         LIMITS: '/limits',
         EMERGENCY: '/emergency',
+        SAFETY: '/safety',
     },
     
     // Feature flags
