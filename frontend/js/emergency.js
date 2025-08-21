@@ -204,8 +204,15 @@ class EmergencyManager {
 
         this.toggleEmergencyResumeButtons();
     }
-    
-    showEmergencyUI() {
+
+    async showEmergencyUI() {
+        let state = await this.api.getState();
+        let top;
+        if (state.isSafetyMode) {
+            top = 90; // Adjust top position for emergency warning
+        } else {
+            top = 20; // Use configured top position
+        }
         // Create or show emergency warning UI
         let emergencyDiv = document.getElementById('emergency-warning');
         if (!emergencyDiv) {
@@ -214,7 +221,7 @@ class EmergencyManager {
             emergencyDiv.innerHTML = `
                 <div style="
                     position: fixed;
-                    top: 20px;
+                    top: ${top}px;
                     left: 50%;
                     transform: translateX(-50%);
                     background: #ff4444;
@@ -249,7 +256,15 @@ class EmergencyManager {
         }
     }
 
-    showSafetyUI() {
+    async showSafetyUI() {
+        let state = await this.api.getState();
+        let top;
+        // Adjust top position based on emergency state
+        if (state.isEmergencyMode) {
+            top = 90; // Adjust top position for emergency warning
+        } else {
+            top = 20; // Use configured top position
+        }
         // Create or show safety warning UI
         let safetyDiv = document.getElementById('safety-warning');
         if (!safetyDiv) {
@@ -258,7 +273,7 @@ class EmergencyManager {
             safetyDiv.innerHTML = `
                 <div style="
                     position: fixed;
-                    top: 20px;
+                    top: ${top}px;
                     left: 50%;
                     transform: translateX(-50%);
                     background: #ff4444;
