@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             app.robot.ui = app.ui; // Pass UI to robot
             app.automation.ui = app.ui; // Pass UI to automation manager
+            app.robot.automation = app.automation; // Pass automation to robot manager
 
             await app.robot.init();
 

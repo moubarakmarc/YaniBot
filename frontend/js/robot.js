@@ -16,6 +16,7 @@ class RobotManager {
         this.positions = this.getPresetPositions();
         this.ui = null; // Will be set by UIManager
         this.api = null; // Will be set by APIManager
+        this.automation = null; // Will be set by AutomationManager
         this.RobotBuilderClass = RobotBuilderClass;
     }
     
@@ -105,7 +106,7 @@ class RobotManager {
                 this.setJointAngles(path[i]);
                 if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
                 await this.api.setCurrentAngles(path[i]);
-                await this.sleep(duration / path.length);
+                await this.sleep(duration / path.length); // Adjust sleep based on path length
                 i++;
             }
 
@@ -166,6 +167,11 @@ class RobotManager {
                 await this.sleep(duration / pathSafer.length);
                 i++;
                 }
+            if (this.automation.stepAutomation === 'drop') {
+                await this.moveTo(pathSafer[i],this.positions[`${this.automation.targetBin}BinApproach`], duration);
+            } else if (this.automation.stepAutomation === 'pick') {
+                await this.moveTo(pathSafer[i], this.positions[`${this.automation.sourceBin}BinApproach`], duration);
+            }
             console.log('✅ Robot movement to safer position finished');
             await this.api.setMovingState(false);
             await this.ui.updateAutomationStatus();            
