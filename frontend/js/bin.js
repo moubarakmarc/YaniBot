@@ -70,8 +70,6 @@ class BinManager {
             right: this.rightBin.length
         };
     }
-
-    // Optionally, add methods to update UI or 3D scene here
 }
 
 // Make class globally available if needed

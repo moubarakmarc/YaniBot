@@ -49,7 +49,7 @@ class RobotBuilder {
         // Simple cylindrical base
         const baseGeometry = new THREE.CylinderGeometry(0.3, 0.35, 2, 16);
         const baseMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x2E7D32, // Green
+            color: 0x00000, // Black
             metalness: 0.3,
             roughness: 0.7
         });
@@ -82,7 +82,7 @@ class RobotBuilder {
         // Simple box shoulder
         const shoulderGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.5);
         const shoulderMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x1976D2, // Blue
+            color: 0xffffff, // White
             metalness: 0.3,
             roughness: 0.7
         });
@@ -114,7 +114,7 @@ class RobotBuilder {
         // Simple upper arm
         const upperArmGeometry = new THREE.BoxGeometry(0.2, 0.25, 0.8);
         const upperArmMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xFFC107, // Yellow
+            color: 0xffffff, // White
             metalness: 0.3,
             roughness: 0.7
         });
@@ -146,7 +146,7 @@ class RobotBuilder {
         // Simple forearm
         const forearmGeometry = new THREE.BoxGeometry(0.15, 0.2, 0.6);
         const forearmMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xFF5722, // Orange
+            color: 0xffffff, // White
             metalness: 0.3,
             roughness: 0.7
         });
@@ -178,7 +178,7 @@ class RobotBuilder {
         // Simple wrist
         const wristGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.2, 12);
         const wristMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x9C27B0, // Purple
+            color: 0xffffff, // White
             metalness: 0.3,
             roughness: 0.7
         });
@@ -235,11 +235,35 @@ class RobotBuilder {
         this.joints.push(joint6);
         
         // Simple TCP marker
-        const tcpGeometry = new THREE.SphereGeometry(0.01, 8, 8);
-        const tcpMaterial = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+        const tcpGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const tcpMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
         const tcp = new THREE.Mesh(tcpGeometry, tcpMaterial);
         tcp.position.z = 0.02;
         joint6.add(tcp);
+
+        // Add a simple two-fingered claw (gripper)
+        const fingerLength = 0.08;
+        const fingerWidth = 0.015;
+        const fingerHeight = 0.025;
+        const fingerOffset = 0.025;
+
+        // Left finger
+        const leftFingerGeometry = new THREE.BoxGeometry(fingerWidth, fingerHeight, fingerLength);
+        const fingerMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.6, roughness: 0.4 });
+        const leftFinger = new THREE.Mesh(leftFingerGeometry, fingerMaterial);
+        leftFinger.position.x = -fingerOffset;
+        leftFinger.position.z = 0.06 + fingerLength / 2;
+        leftFinger.castShadow = true;
+        leftFinger.receiveShadow = true;
+        joint6.add(leftFinger);
+
+        // Right finger
+        const rightFinger = new THREE.Mesh(leftFingerGeometry, fingerMaterial);
+        rightFinger.position.x = fingerOffset;
+        rightFinger.position.z = 0.06 + fingerLength / 2;
+        rightFinger.castShadow = true;
+        rightFinger.receiveShadow = true;
+        joint6.add(rightFinger);
         
         return joint6;
     }

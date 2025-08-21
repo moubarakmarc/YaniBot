@@ -130,18 +130,26 @@ class UIManager {
     // Event Handlers
     async handleResetScene() {
         try {
-            this.showStatus('Resetting scene...', 'info');
-            let state = await this.api.getState();
-            // Stop automation if running
-            if (state.isMoving) {
-                await this.automation.stop();
-            }
+            this.showStatus('Restarting scene...', 'info');
+            let resetData = await this.api.reset();
+
             // Reset the scene
-            if (this.robot && this.robot.scene && this.robot.scene.reset) {
-                await this.robot.scene.reset();
+            if (this.robot.sceneManager.reset) {
+                await this.api.setCurrentAngles(resetData.targetAngles);
+                await this.api.setMovingState(false);
+                await this.api.setPauseState(false);
+                await this.api.setStopState(false);
+                await this.api.setEmergencyState(false);
+                await this.api.setSafetyMode(false);
+                this.updateJointDisplays(resetData.currentAngles);
+                this.updateAutomationStatus();
+                this.updateAutomationButtons();
+                this.toggleOverrideControls();
+                await this.robot.sceneManager.reset();
+                
             } else {
                 // Fallback: reload the page
-                location.reload();
+                throw new Error('Scene reset method not available');
             }
             this.showStatus('Scene reset!', 'success');
         } catch (error) {
@@ -228,6 +236,11 @@ class UIManager {
             return;
         }
 
+        if (state.isSafetyMode) {
+            this.showStatus('Robot is in safety mode! Clear safety before moving joints.', 'error');
+            return;
+        }
+        
         // Update display immediately for responsiveness
         valueDisplay.textContent = `${Math.round(angle)}°`;
         
@@ -272,7 +285,7 @@ class UIManager {
     async updateAutomationStatus() {
         let state = await this.api.getState();
         const isMoving = state.isMoving;
-        
+
         if (isMoving){
             this.elements.automationStatus.textContent = 'Moving...';
         } else {
@@ -335,25 +348,42 @@ class UIManager {
     }
     
     showToast(message, type = 'info') {
+        // Ensure a toast container exists
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            Object.assign(container.style, {
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                zIndex: '10000',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: '10px',
+                pointerEvents: 'none'
+            });
+            document.body.appendChild(container);
+        }
+
         // Create toast notification
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
-        
+
         // Style the toast
         Object.assign(toast.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
             padding: '12px 20px',
             borderRadius: '5px',
             color: 'white',
             fontWeight: 'bold',
-            zIndex: '10000',
             opacity: '0',
-            transition: 'opacity 0.3s ease'
+            transition: 'opacity 0.3s ease',
+            margin: 0,
+            pointerEvents: 'auto'
         });
-        
+
         // Set background color based on type
         const colors = {
             info: '#2196F3',
@@ -362,15 +392,15 @@ class UIManager {
             error: '#F44336'
         };
         toast.style.backgroundColor = colors[type] || colors.info;
-        
-        // Add to DOM
-        document.body.appendChild(toast);
-        
+
+        // Add to container
+        container.appendChild(toast);
+
         // Animate in
         setTimeout(() => {
             toast.style.opacity = '1';
         }, 100);
-        
+
         // Remove after delay
         setTimeout(() => {
             toast.style.opacity = '0';

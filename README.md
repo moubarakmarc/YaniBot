@@ -5,13 +5,6 @@
 
 ---
 
-![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688)
-![Three.js](https://img.shields.io/badge/Three.js-3D-orange)
-
----
-
 ## 📋 Table of Contents
 
 - [Overview](#overview)

@@ -6,6 +6,7 @@ class SceneManager {
         this.renderer = null;
         this.workstation = null;
         this.controls = null;
+        this.manualControlsEnabled = true;
     }
     
     async init() {
@@ -101,6 +102,71 @@ class SceneManager {
         
         // Work area boundaries
         this.createWorkAreaBoundaries();
+
+        // Add "SEREACT" text outside the yellow workspace boundaries using CanvasTexture
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+
+        // Draw background (optional, transparent)
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw text
+        ctx.font = 'bold 80px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('sereact', canvas.width / 2, canvas.height / 2);
+
+        // Create texture and material
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        const material = new THREE.MeshStandardMaterial({ map: texture, transparent: true });
+
+        // Create a plane for the text
+        const textWidth = 5;   // Adjust as needed
+        const textHeight = 1.2; // Adjust as needed
+        const textPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(textWidth, textHeight),
+            material
+        );
+
+        // Position the text plane outside the workspace boundary
+        textPlane.position.set(0, 0.051, -5.5); // x, y, z (y slightly above ground)
+        textPlane.rotation.x = -Math.PI / 2;   // Lay flat on the ground
+
+        this.scene.add(textPlane);
+
+        // Add a blue capital S above the SEREACT text
+        const canvasS = document.createElement('canvas');
+        canvasS.width = 256;
+        canvasS.height = 256;
+        const ctxS = canvasS.getContext('2d');
+        ctxS.clearRect(0, 0, canvasS.width, canvasS.height);
+        ctxS.font = 'bold 180px Arial';
+        ctxS.fillStyle = '#1976D2'; // Blue
+        ctxS.textAlign = 'center';
+        ctxS.textBaseline = 'middle';
+        ctxS.fillText('S', canvasS.width / 2, canvasS.height / 2);
+
+        const textureS = new THREE.CanvasTexture(canvasS);
+        textureS.needsUpdate = true;
+        const materialS = new THREE.MeshStandardMaterial({ map: textureS, transparent: true });
+
+        const sWidth = 1;  // Adjust as needed
+        const sHeight = 1; // Adjust as needed
+        const sPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(sWidth, sHeight),
+            materialS
+        );
+
+        // Position the blue S above the SEREACT text
+        sPlane.position.set(0, 0.052, -6.5); // x, y, z (z is slightly less negative than SEREACT)
+        sPlane.rotation.x = -Math.PI / 2;
+        sPlane.rotation.z = Math.PI / 2;
+
+        this.scene.add(sPlane);
         
         console.log("🏢 Ground created");
     }
@@ -159,18 +225,27 @@ class SceneManager {
         let mouseDown = false;
         let mouseX = 0;
         let mouseY = 0;
+
+        this.resetManualControls = () => {
+            mouseDown = false;
+            mouseX = 0;
+            mouseY = 0;
+        };
         
         this.renderer.domElement.addEventListener('mousedown', (event) => {
+            if (!this.manualControlsEnabled) return;
             mouseDown = true;
             mouseX = event.clientX;
             mouseY = event.clientY;
         });
         
         this.renderer.domElement.addEventListener('mouseup', () => {
+            if (!this.manualControlsEnabled) return;
             mouseDown = false;
         });
         
         this.renderer.domElement.addEventListener('mousemove', (event) => {
+            if (!this.manualControlsEnabled) return;
             if (!mouseDown) return;
             
             const deltaX = event.clientX - mouseX;
@@ -192,6 +267,7 @@ class SceneManager {
         
         // Zoom with mouse wheel
         this.renderer.domElement.addEventListener('wheel', (event) => {
+            if (!this.manualControlsEnabled) return;
             const distance = this.camera.position.length();
             const newDistance = distance + event.deltaY * 0.01;
             this.camera.position.normalize().multiplyScalar(Math.max(2, Math.min(20, newDistance)));

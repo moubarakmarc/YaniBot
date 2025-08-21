@@ -16,6 +16,7 @@ class RobotManager {
         this.positions = this.getPresetPositions();
         this.ui = null; // Will be set by UIManager
         this.api = null; // Will be set by APIManager
+        this.automation = null; // Will be set by AutomationManager
         this.RobotBuilderClass = RobotBuilderClass;
     }
     
@@ -105,7 +106,7 @@ class RobotManager {
                 this.setJointAngles(path[i]);
                 if (this.ui.updateJointDisplays) this.ui.updateJointDisplays(path[i]);
                 await this.api.setCurrentAngles(path[i]);
-                await this.sleep(duration / path.length);
+                await this.sleep(duration / path.length); // Adjust sleep based on path length
                 i++;
             }
 
@@ -166,6 +167,11 @@ class RobotManager {
                 await this.sleep(duration / pathSafer.length);
                 i++;
                 }
+            if (this.automation.stepAutomation === 'drop') {
+                await this.moveTo(pathSafer[i],this.positions[`${this.automation.targetBin}BinApproach`], duration);
+            } else if (this.automation.stepAutomation === 'pick') {
+                await this.moveTo(pathSafer[i], this.positions[`${this.automation.sourceBin}BinApproach`], duration);
+            }
             console.log('✅ Robot movement to safer position finished');
             await this.api.setMovingState(false);
             await this.ui.updateAutomationStatus();            
@@ -246,12 +252,16 @@ class RobotManager {
     
     async waitWhilePaused() {
         let state = await this.api.getState();
-        while (state.isEmergencyMode || state.isPaused) {
+        while (state.isEmergencyMode || state.isPaused || state.isSafetyMode) {
+            this.api.setMovingState(false); // Ensure robot is not moving
             if (state.isEmergencyMode) {
                 console.warn('⏸️ Waiting for emergency mode to clear...');
             } else if (state.isPaused) {
                 console.warn('⏸️ Waiting for user pause to end...');
+            } else if (state.isSafetyMode) {
+                console.warn('⏸️ Waiting for safety mode to end...');
             }
+            this.ui.updateAutomationStatus();
             await this.sleep(100); // Check every 100ms
             state = await this.api.getState();
         }

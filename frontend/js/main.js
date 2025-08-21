@@ -1,5 +1,5 @@
 let app = {};
-////////////////////////////////////////////////// fix order of initialization
+
 // Initialize global app object
 window.LOG_OPTIONS = {
     state: true,
@@ -10,7 +10,8 @@ window.LOG_OPTIONS = {
     currentAngles: true,
     stopState: true,
     pauseState: true,
-    emergencyState: true
+    emergencyState: true,
+    safetyMode: true
 };
 
 // Update loading status if available
@@ -68,10 +69,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Initialize UI first
             app.ui = new UIManager(app.robot, app.automation);
             app.ui.api = app.api; // Pass API to UI manager
+            app.ui.scene = app.scene; // Pass scene to UI manager
             await app.ui.init();
 
             app.robot.ui = app.ui; // Pass UI to robot
             app.automation.ui = app.ui; // Pass UI to automation manager
+            app.robot.automation = app.automation; // Pass automation to robot manager
 
             await app.robot.init();
 
@@ -82,11 +85,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             app.ui.emergencyManager = app.emergency; // Update UI manager with emergency reference
             app.automation.emergencyManager = app.emergency; // Update automation manager with emergency reference
             app.emergency.api = app.api; // Pass API to emergency manager
+
+            await app.emergency.init();
             
             updateLoadingStatus("YaniBot ready!");
             
             console.log("✅ YaniBot Initialized Successfully");
-            console.log("📊 App components:", { /// add more
+            console.log("📊 App components:", { 
                 scene: !!app.scene,
                 robot: !!app.robot,
                 automation: !!app.automation,

@@ -15,6 +15,7 @@ class TestRobotArm:
             5: (-300, 300)
         }
         assert robot.isEmergencyMode is False
+        assert robot.isSafetyMode is False
         assert robot.isPaused is False
         assert robot.isMoving is False
         assert robot.isStopped is False

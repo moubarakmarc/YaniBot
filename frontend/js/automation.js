@@ -12,6 +12,9 @@ class AutomationManager {
         this.automationInterval = null;
         this.strategy = 'left-to-right'; // Default strategy
         this.api = null; // Will be set by APIManager
+        this.sourceBin = null;
+        this.targetBin = null;
+        this.stepAutomation = null;
     }
 
     async init() {
@@ -59,12 +62,14 @@ class AutomationManager {
     async performCycle() {
         this.cycleCount++;
         const { sourceBin, targetBin } = this.binManager.getTransferPair(this.strategy);
+        this.sourceBin = sourceBin;
+        this.targetBin = targetBin;
 
         // Check if source bin is empty
         if (!sourceBin || this.binManager.isEmpty(sourceBin)) {
             console.log('🚫 No valid transfer pair available. Stopping automation.');
             this.ui.showStatus('Automation stopped: No objects left to move', 'warning');
-            this.api.setMovingState(false);
+            this.ui.handleStopAutomation();
             return false;
         }
         await this.pickAndPlace(sourceBin, targetBin);
@@ -88,8 +93,11 @@ class AutomationManager {
             const dropLiftPos = this.robot.positions[`${targetBin}BinLift`];
 
             // 1. Move to pick position (home → approach → pick)
+            this.stepAutomation = 'intermediate1';
             await this.robot.moveTo(null, this.robot.positions.intermediate1, 700);
+            this.stepAutomation = 'approach';
             await this.robot.moveTo(null, approachPos, 700);
+            this.stepAutomation = 'pick';
             await this.robot.moveTo(null, pickPos, 700);
 
             /// 2. Pick object
@@ -98,9 +106,13 @@ class AutomationManager {
             if (this.ui && this.ui.updateBinCounts) this.ui.updateBinCounts();
 
             // 3. Move to drop position (pick → lift → intermediate → dropApproach → drop)
+            this.stepAutomation = 'lift';
             await this.robot.moveTo(null, liftPos, 700);
+            this.stepAutomation = 'intermediate1';
             await this.robot.moveTo(null, this.robot.positions.intermediate1, 700);
+            this.stepAutomation = 'dropApproach';
             await this.robot.moveTo(null, dropApproachPos, 700);
+            this.stepAutomation = 'drop';
             await this.robot.moveTo(null, dropPos, 600);
 
             // 4. Drop object
@@ -109,7 +121,9 @@ class AutomationManager {
             if (this.ui && this.ui.updateBinCounts) this.ui.updateBinCounts();
 
             // 5. Move back home (drop → dropLift → home)
+            this.stepAutomation = 'dropLift';
             await this.robot.moveTo(null, dropLiftPos, 700);
+            this.stepAutomation = 'intermediate1';
             await this.robot.moveTo(null, this.robot.positions.intermediate1, 700);
 
         } catch (error) {

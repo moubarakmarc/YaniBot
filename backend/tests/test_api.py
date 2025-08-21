@@ -32,6 +32,7 @@ class TestAPI:
         assert data["isStopped"] is not None
         assert data["isEmergencyMode"] is not None
         assert data["currentAngles"] is not None
+        assert data["isSafetyMode"] is not None
 
     def test_set_angles_valid(self):
         angles = [10, 20, 30, 0, 0, 0]
@@ -69,6 +70,11 @@ class TestAPI:
         assert data["message"] == "Robot reset to home position"
         assert data["currentAngles"] == [1,2,3,4,5,6]  # Assuming reset returns the last set angles
         assert data["targetAngles"] == [0.0, 30.0, 55.0, 0.0, 0.0, 0.0]
+        assert data["isMoving"] is False
+        assert data["isPaused"] is False
+        assert data["isStopped"] is False
+        assert data["isEmergencyMode"] is False
+        assert data["isSafetyMode"] is False
 
     def test_post_limits_valid(self):
         response = client.post("/limits", json={"joint_angles": [0, 0, 0, 0, 0, 0]})
@@ -166,6 +172,20 @@ class TestAPI:
         assert response.status_code == 200
         assert data["success"] is True
         assert data["isEmergencyMode"] is False
+    
+    def test_set_safety_mode(self):
+        response = client.post("/safety", json={"is_emergency": True})
+        data = response.json()
+        assert response.status_code == 200
+        assert data["success"] is True
+        assert data["isSafetyMode"] is True
+
+    def test_unset_safety_mode(self):
+        response = client.post("/safety", json={"is_emergency": False})
+        data = response.json()
+        assert response.status_code == 200
+        assert data["success"] is True
+        assert data["isSafetyMode"] is False
 
     @pytest.mark.parametrize("endpoint,method", [
         ("/", "GET"),
