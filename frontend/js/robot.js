@@ -247,6 +247,7 @@ class RobotManager {
     async waitWhilePaused() {
         let state = await this.api.getState();
         while (state.isEmergencyMode || state.isPaused || state.isSafetyMode) {
+            this.api.setMovingState(false); // Ensure robot is not moving
             if (state.isEmergencyMode) {
                 console.warn('⏸️ Waiting for emergency mode to clear...');
             } else if (state.isPaused) {
@@ -254,6 +255,7 @@ class RobotManager {
             } else if (state.isSafetyMode) {
                 console.warn('⏸️ Waiting for safety mode to end...');
             }
+            this.ui.updateAutomationStatus();
             await this.sleep(100); // Check every 100ms
             state = await this.api.getState();
         }

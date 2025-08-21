@@ -285,7 +285,7 @@ class UIManager {
     async updateAutomationStatus() {
         let state = await this.api.getState();
         const isMoving = state.isMoving;
-        
+
         if (isMoving){
             this.elements.automationStatus.textContent = 'Moving...';
         } else {
