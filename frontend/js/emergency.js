@@ -164,8 +164,7 @@ class EmergencyManager {
 
     }
 
-    async deactivateSafetyMode() {
-        let state = await this.api.getState();
+    deactivateSafetyMode() {
         console.log("✅ SAFETY MODE DEACTIVATED");
         
         // Change square color back to gold
@@ -173,23 +172,22 @@ class EmergencyManager {
         // Hide safety UI
         this.hideSafetyUI();
         
-        if (state.isSafetyMode) {
-            this.api.setSafetyMode(false);
-        }
+        this.api.setSafetyMode(false);
     }
 
     activateEmergencyMode() {
         console.log("🚨 EMERGENCY MODE TRIGGERED!");
-        
-        this.api.setEmergencyState(true)
+
+        let mode = true;
+        this.api.setEmergencyState(mode)
         
         // Show emergency UI
         this.showEmergencyUI();
 
-        this.toggleEmergencyResumeButtons();
+        this.toggleEmergencyResumeButtons(mode);
     }
 
-    async deactivateEmergencyMode() {
+    deactivateEmergencyMode() {
 
         console.log("✅ EMERGENCY MODE DEACTIVATED");
         
@@ -197,12 +195,11 @@ class EmergencyManager {
         this.hideEmergencyUI();
         
         // Auto-resume robot movement
-        let state = await this.api.getState();
-        if (state.isEmergencyMode) {
-            this.api.setEmergencyState(false);
-        }
+        let mode = false;
+        this.api.setEmergencyState(mode);
 
-        this.toggleEmergencyResumeButtons();
+
+        this.toggleEmergencyResumeButtons(mode);
     }
 
     async showEmergencyUI() {
@@ -252,7 +249,7 @@ class EmergencyManager {
     hideEmergencyUI() {
         const emergencyDiv = document.getElementById('emergency-warning');
         if (emergencyDiv) {
-            emergencyDiv.style.display = 'none';
+            emergencyDiv.remove(); // This will remove the element from the DOM
         }
     }
 
@@ -304,22 +301,26 @@ class EmergencyManager {
     hideSafetyUI() {
         const safetyDiv = document.getElementById('safety-warning');
         if (safetyDiv) {
-            safetyDiv.style.display = 'none';
+            safetyDiv.remove(); // This will remove the element from the DOM
         }
     }
 
-    async toggleEmergencyResumeButtons() {
+    async toggleEmergencyResumeButtons(mode = null) {
         const emergencyBtn = document.getElementById('emergencyStop');
         const resumeEbtn = document.getElementById('resumeEmergency');
-
-        let state = await this.api.getState();
-        if (state.isEmergencyMode) {
-            emergencyBtn.style.display = 'none';
-            resumeEbtn.style.display = '';
-        } else {
-            emergencyBtn.style.display = '';
-            resumeEbtn.style.display = 'none';
-        }
+        try{
+            if (mode) {
+                emergencyBtn.style.display = 'none';
+                resumeEbtn.style.display = '';
+            } else if (mode === false) {
+                emergencyBtn.style.display = '';
+                resumeEbtn.style.display = 'none';
+            } else {
+                throw new Error("Invalid mode for toggleEmergencyResumeButtons");
+            }
+        } catch (error) {
+            console.error("Error toggling emergency buttons:", error);
+        }  
     }
 }
 
