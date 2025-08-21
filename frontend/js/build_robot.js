@@ -49,7 +49,7 @@ class RobotBuilder {
         // Simple cylindrical base
         const baseGeometry = new THREE.CylinderGeometry(0.3, 0.35, 2, 16);
         const baseMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x2E7D32, // Green
+            color: 0x00000, // Black
             metalness: 0.3,
             roughness: 0.7
         });
@@ -82,7 +82,7 @@ class RobotBuilder {
         // Simple box shoulder
         const shoulderGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.5);
         const shoulderMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x1976D2, // Blue
+            color: 0xffffff, // White
             metalness: 0.3,
             roughness: 0.7
         });
@@ -114,7 +114,7 @@ class RobotBuilder {
         // Simple upper arm
         const upperArmGeometry = new THREE.BoxGeometry(0.2, 0.25, 0.8);
         const upperArmMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xFFC107, // Yellow
+            color: 0xffffff, // White
             metalness: 0.3,
             roughness: 0.7
         });
@@ -146,7 +146,7 @@ class RobotBuilder {
         // Simple forearm
         const forearmGeometry = new THREE.BoxGeometry(0.15, 0.2, 0.6);
         const forearmMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xFF5722, // Orange
+            color: 0xffffff, // White
             metalness: 0.3,
             roughness: 0.7
         });
@@ -178,7 +178,7 @@ class RobotBuilder {
         // Simple wrist
         const wristGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.2, 12);
         const wristMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x9C27B0, // Purple
+            color: 0xffffff, // White
             metalness: 0.3,
             roughness: 0.7
         });
