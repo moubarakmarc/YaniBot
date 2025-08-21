@@ -1,6 +1,7 @@
 class EmergencyManager {
     constructor(sceneManager, robotManager) {
         this.scene = sceneManager.scene;
+        this.sceneManager = sceneManager;
         this.robotManager = robotManager;
         this.camera = sceneManager.camera;
         this.renderer = sceneManager.renderer;
@@ -11,7 +12,6 @@ class EmergencyManager {
         this.mouse = new THREE.Vector2();
         this.EMERGENCY_RADIUS = 3.0; // 3 meters - same as red circle
         this.api = null;
-        this.init();
     }
     
     init() {
@@ -73,6 +73,9 @@ class EmergencyManager {
         if (intersects.length > 0) {
             this.isDragging = true;
             this.movableObject.material = this.hoverMaterial;
+            if (this.sceneManager) { // Disable controls while dragging
+                this.sceneManager.manualControlsEnabled = false;
+            }
             console.log("📦 Started dragging square");
         }
     }
@@ -111,11 +114,19 @@ class EmergencyManager {
     
     onMouseUp(event) {
         event.preventDefault();
+
         
         if (this.isDragging) {
             this.isDragging = false;
             this.movableObject.material = this.normalMaterial;
             this.renderer.domElement.style.cursor = 'default';
+            console.log("this.sceneManager", this.sceneManager);
+            if (this.sceneManager) { // Enable controls while dragging
+                this.sceneManager.manualControlsEnabled = true;
+                if (typeof this.sceneManager.resetManualControls === 'function') {
+                    this.sceneManager.resetManualControls();
+                }
+            }
             console.log("📦 Stopped dragging square");
         }
     }

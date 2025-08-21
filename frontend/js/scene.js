@@ -6,6 +6,7 @@ class SceneManager {
         this.renderer = null;
         this.workstation = null;
         this.controls = null;
+        this.manualControlsEnabled = true;
     }
     
     async init() {
@@ -224,18 +225,27 @@ class SceneManager {
         let mouseDown = false;
         let mouseX = 0;
         let mouseY = 0;
+
+        this.resetManualControls = () => {
+            mouseDown = false;
+            mouseX = 0;
+            mouseY = 0;
+        };
         
         this.renderer.domElement.addEventListener('mousedown', (event) => {
+            if (!this.manualControlsEnabled) return;
             mouseDown = true;
             mouseX = event.clientX;
             mouseY = event.clientY;
         });
         
         this.renderer.domElement.addEventListener('mouseup', () => {
+            if (!this.manualControlsEnabled) return;
             mouseDown = false;
         });
         
         this.renderer.domElement.addEventListener('mousemove', (event) => {
+            if (!this.manualControlsEnabled) return;
             if (!mouseDown) return;
             
             const deltaX = event.clientX - mouseX;
@@ -257,6 +267,7 @@ class SceneManager {
         
         // Zoom with mouse wheel
         this.renderer.domElement.addEventListener('wheel', (event) => {
+            if (!this.manualControlsEnabled) return;
             const distance = this.camera.position.length();
             const newDistance = distance + event.deltaY * 0.01;
             this.camera.position.normalize().multiplyScalar(Math.max(2, Math.min(20, newDistance)));

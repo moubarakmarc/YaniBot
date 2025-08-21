@@ -83,11 +83,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             app.ui.emergencyManager = app.emergency; // Update UI manager with emergency reference
             app.automation.emergencyManager = app.emergency; // Update automation manager with emergency reference
             app.emergency.api = app.api; // Pass API to emergency manager
+
+            await app.emergency.init();
             
             updateLoadingStatus("YaniBot ready!");
             
             console.log("✅ YaniBot Initialized Successfully");
-            console.log("📊 App components:", { /// add more
+            console.log("📊 App components:", { 
                 scene: !!app.scene,
                 robot: !!app.robot,
                 automation: !!app.automation,
