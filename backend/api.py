@@ -147,7 +147,8 @@ def reset_robot():
             "isMoving": False,
             "isPaused": False,
             "isStopped": False,
-            "isEmergencyMode": False
+            "isEmergencyMode": False,
+            "isSafetyMode": False
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

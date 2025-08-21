@@ -81,7 +81,8 @@ The API will be available at [http://localhost:8000](http://localhost:8000).
   Stop robot movement.
 
 - `POST /emergency`  
-  Set or clear emergency mode.
+  Set or clear emergency and/or safety modes.
+
 
 ---
 
