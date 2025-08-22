@@ -1,0 +1,2 @@
+- add safer positioning to reset home.
+- block other joint input values when sending manual instructions
