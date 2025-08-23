@@ -1,4 +1,3 @@
-- add safer positioning to reset home.
 - block other joint input values when sending manual instructions
 - add green line of path
 - add behaviour tree graph

@@ -364,7 +364,7 @@ button:disabled {
     gap: 4px;
 }
 
-.joint-arrow-control {
+.joint-control {
     display: flex;
     align-items: center;
     justify-content: space-between; /* Add this line */
@@ -372,7 +372,7 @@ button:disabled {
     margin-bottom: 8px;
 }
 
-.joint-arrow-control label {
+.joint-control label {
     max-width: 100px;
     font-size: 0.88em;
     font-weight: 500;
@@ -386,35 +386,6 @@ button:disabled {
     display: inline-block;
 }
 
-.joint-arrow {
-    width: 30px;
-    height: 30px;
-    font-size: 1.4em;
-    background: #4a90e2;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-weight: 700;
-    box-shadow: 0 2px 8px rgba(74,144,226,0.10);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-    cursor: pointer;
-    margin: 0 2px;
-    outline: none;
-}
-.joint-arrow:hover:not(:disabled) {
-    background: #357ab8;
-    color: #fff;
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 4px 16px rgba(74,144,226,0.18);
-}
-
-.joint-arrow:active:not(:disabled) {
-    background: #285a8c;
-    transform: scale(0.97);
-}
 .joint-input {
     width: 30px;
     height: 30px;
@@ -458,6 +429,37 @@ button:disabled {
     margin: 0;
     padding: 0;
     background: none;
+}
+.btn-set-joints {
+    color: #fff;
+    background: linear-gradient(90deg, #4a90e2 0%, #357ab8 100%);
+    border: none;
+    font-weight: bold;
+    font-size: 1.08em;
+    padding: 12px 28px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(74,144,226,0.18);
+    cursor: pointer;
+    transition: 
+        background 0.2s,
+        box-shadow 0.2s,
+        transform 0.1s;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    outline: none;
+}
+
+.btn-set-joints:hover:not(:disabled),
+.btn-set-joints:focus-visible {
+    background: linear-gradient(90deg, #357ab8 0%, #4a90e2 100%);
+    box-shadow: 0 4px 16px rgba(74,144,226,0.28);
+    transform: translateY(-2px) scale(1.03);
+}
+
+.btn-set-joints:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(74,144,226,0.12);
 }
 
 /* Manual Buttons */
