@@ -1,2 +1,1 @@
-- add green line of path
 - add behaviour tree graph
