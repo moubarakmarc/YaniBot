@@ -219,7 +219,13 @@ class UIManager {
         try {
             this.showStatus('Resetting robot...', 'info');
             const manualIntervention = true; // No pause during reset
+            let state = null;
             let resetData = await this.api.reset();
+            if (resetData.currentAngles[1] > 50.0){
+                await this.robot.moveToSaferPosition(resetData.currentAngles);
+                state = await this.api.getState();
+                resetData.currentAngles = state.currentAngles;
+            }
             await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000, manualIntervention);
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
