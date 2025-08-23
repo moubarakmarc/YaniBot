@@ -51,15 +51,6 @@ class RobotManager {
     }
     
     // Movement Methods
-    async moveSingleJoint(jointIndex, value, duration = 2000) {
-        let state = await this.api.getState();
-        const currentAngles = state.currentAngles;
-        const targetAngles = [...currentAngles];
-        const manualIntervention = true; // No need to force pause for single joint movement
-        targetAngles[jointIndex] = value;
-        await this.moveTo(currentAngles, targetAngles, duration, manualIntervention);
-    }
-
     async moveTo(startAngles = null, targetAngles, duration = 2000, manualIntervention = false) {
         
         try {

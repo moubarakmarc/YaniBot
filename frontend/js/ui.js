@@ -5,7 +5,6 @@ class UIManager {
         this.automation = automationManager;
         this.emergencyManager = emergencyManager;
         this.elements = {};
-        this.inputDebounceTimers = {};
         this.api = null; 
     }
     
@@ -36,6 +35,7 @@ class UIManager {
             manualJointControl: document.getElementById('manual-override'),
             jointInputs: {},
             jointValues: {},
+            setJointsBtn: document.getElementById('setJoints'),
             resetJointsBtn: document.getElementById('resetJoints'),
 
             // Emergency controls
@@ -107,21 +107,7 @@ class UIManager {
         });
 
         // Joint controls
-        Object.entries(this.elements.jointInputs).forEach(([jointKey, inputEl], idx) => {
-            inputEl.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    let value = parseFloat(inputEl.value);
-                    const min = parseFloat(inputEl.min);
-                    const max = parseFloat(inputEl.max);
-                    value = Math.max(min, Math.min(max, value));
-                    inputEl.value = value; // Clamp value in input
-                    // // Update the value display immediately
-                    const valueDisplay = this.elements.jointValues[jointKey];
-                    // Move the robot and send to backend
-                    this.handleJointInputChange(idx, value, valueDisplay);
-                }
-            });
-        });
+        this.elements.setJointsBtn?.addEventListener('click', () => this.handleSetJoints());
 
 
         console.log("🔗 UI Events bound");
@@ -218,6 +204,8 @@ class UIManager {
     async handleResetJoints() {
         try {
             this.showStatus('Resetting robot...', 'info');
+            await this.api.setMovingState(true);
+            await this.toggleOverrideControls();
             const manualIntervention = true; // No pause during reset
             let state = null;
             let resetData = await this.api.reset();
@@ -227,6 +215,7 @@ class UIManager {
                 resetData.currentAngles = state.currentAngles;
             }
             await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000, manualIntervention);
+            await this.toggleOverrideControls();
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);
@@ -234,32 +223,42 @@ class UIManager {
         }
     }
 
-    async handleJointInputChange(jointIndex, angle, valueDisplay) {
+    async handleSetJoints() {
         let state = await this.api.getState();
-
         if (state.isEmergencyMode) {
             this.showStatus('Robot is in emergency stop! Clear emergency before moving joints.', 'error');
             return;
         }
-
         if (state.isSafetyMode) {
             this.showStatus('Robot is in safety mode! Clear safety before moving joints.', 'error');
             return;
         }
-        
-        // Update display immediately for responsiveness
-        valueDisplay.textContent = `${Math.round(angle)}°`;
-        
-        // Update visual robot immediately
-        this.robot.moveSingleJoint(jointIndex, angle);
-        
-        // Clear existing debounce timer
-        if (this.inputDebounceTimers[jointIndex]) {
-            clearTimeout(this.inputDebounceTimers[jointIndex]);
+
+        await this.api.setMovingState(true);
+        await this.toggleOverrideControls();
+
+        // Gather all joint input values
+        const jointAngles = [];
+        for (let i = 1; i <= 6; i++) {
+            const inputEl = this.elements.jointInputs[`a${i}`];
+            let value = parseFloat(inputEl.value);
+            inputEl.value = value; // Clamp value in input
+            jointAngles.push(value);
+            // Optionally update the display
+            const valueDisplay = this.elements.jointValues[`a${i}`];
+            if (valueDisplay) valueDisplay.textContent = `${Math.round(value)}°`;
         }
-        
-        // Set new debounce timer for backend update
-        this.inputDebounceTimers[jointIndex] = setTimeout(async () => {}, 3000); // 3000ms debounce
+
+        // Send all joint angles to the robot/backend
+        try {
+            this.showStatus('Setting joint angles...', 'info');
+            const manualIntervention = true;
+            await this.robot.moveTo(state.currentAngles, jointAngles, 1000, manualIntervention);
+            this.showStatus('Joint angles set!', 'success');
+            await this.toggleOverrideControls();
+        } catch (error) {
+            this.showStatus(`Failed to set joints: ${error.message}`, 'error');
+        }
     }
 
     async handlePageUnload() {
