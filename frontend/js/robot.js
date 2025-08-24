@@ -1,6 +1,6 @@
 // robot.js - Complete Robot creation and movement management
 class RobotManager {
-    constructor(sceneManager, RobotBuilderClass) {
+    constructor(sceneManager, RobotBuilderClass, APIManager) {
         if (!window.ENV) {
             console.error("❌ window.ENV not found! Make sure env.js is loaded first");
             throw new Error("ENV configuration not loaded");
@@ -13,9 +13,8 @@ class RobotManager {
         this.joints = [];
         this.robotSegments = [];
         this.robotRoot = null;
-        this.positions = this.getPresetPositions();
         this.ui = null; // Will be set by UIManager
-        this.api = null; // Will be set by APIManager
+        this.api = APIManager;
         this.automation = null; // Will be set by AutomationManager
         this.RobotBuilderClass = RobotBuilderClass;
     }
@@ -47,7 +46,7 @@ class RobotManager {
         });
         this.ui.updateJointDisplays(anglesDeg);
 
-        console.log("🤖 Enhanced ABB IRB6600 robot initialized");
+        console.log("🤖 ABB IRB6600 robot initialized");
     }
     
     // Movement Methods
@@ -159,9 +158,9 @@ class RobotManager {
                 i++;
                 }
             if (this.automation.stepAutomation === 'drop') {
-                await this.moveTo(pathSafer[i],this.positions[`${this.automation.targetBin}BinApproach`], duration);
+                await this.moveTo(pathSafer[i],this.automation.positions[`${this.automation.targetBin}BinApproach`], duration);
             } else if (this.automation.stepAutomation === 'pick') {
-                await this.moveTo(pathSafer[i], this.positions[`${this.automation.sourceBin}BinApproach`], duration);
+                await this.moveTo(pathSafer[i], this.automation.positions[`${this.automation.sourceBin}BinApproach`], duration);
             }
             console.log('✅ Robot movement to safer position finished');
             await this.api.setMovingState(false);
@@ -176,7 +175,6 @@ class RobotManager {
         }
     }
 
-    
     setJointAngles(angles) {
         for (let i = 0; i < Math.min(angles.length, this.joints.length); i++) {
             this.updateJointRotation(i, angles[i]);
@@ -219,28 +217,49 @@ class RobotManager {
         return true;
     }
     
-    getPresetPositions() {
-        return {
-            // change to become default ABB IRB6600 home position
-            home: [0.0, 30.0, 55.0, 0.0, 0.0, 0.0], // Default home position
-            
-            // Realistic ABB IRB6600 positions
-            leftBinApproach: [-45.0, 50.0, 55.0, 0.0, 0.0, 0.0],
-            leftBinPick: [-45.0,75.0,55.0,0.0,35.0,10.0],
-            leftBinDrop: [-45.0,75.0,55.0,0.0,35.0,10.0],
-            leftBinLift: [-45.0,50.0,55.0,0.0,0.0,0.0],
-
-            rightBinApproach: [45.0,50.0,55.0,0.0,0.0,0.0],
-            rightBinPick: [45.0,75.0,55.0,0.0,35.0,-10.0],
-            rightBinDrop: [45.0,75.0,55.0,0.0,35.0,-10.0],
-            rightBinLift: [45.0,50.0,55.0,0.0,0.0,0.0],
-
-            // Safe intermediate positions
-            intermediate1: [0.0, 30.0, 55.0, 0.0, 0.0, 0.0],
-            
-        };
+    async pickObject(binName) {
+        await this.sleep(500); // Simulate gripper closing
+        this.currentlyHeldObject = this.automation.binManager.pickupObject(binName);
+        if (this.currentlyHeldObject) {
+            this.attachObjectToRobot(this.currentlyHeldObject);
+            console.log(`📦 Object picked from ${binName} bin`);
+        } else {
+            throw new Error(`No objects available in ${binName} bin`);
+        }
     }
-    
+
+    attachObjectToRobot(object) {
+        if (this.joints[5]) {
+            const flangePosition = new THREE.Vector3();
+            this.joints[5].getWorldPosition(flangePosition);
+            if (object.parent) object.parent.remove(object);
+            this.joints[5].add(object);
+            object.position.set(0, 0, 0.1);
+        }
+    }
+
+    async dropObject(binName) {
+        if (!this.currentlyHeldObject) throw new Error('No object to drop');
+        await this.sleep(500); // Simulate gripper opening
+        this.automation.binManager.dropObject(this.currentlyHeldObject, binName);
+        this.detachObjectFromRobot();
+        this.currentlyHeldObject = null;
+        console.log(`📦 Object dropped in ${binName} bin`);
+    }
+
+    detachObjectFromRobot() {
+        if (this.currentlyHeldObject && this.joints[5]) {
+            // Remove from robot flange
+            this.joints[5].remove(this.currentlyHeldObject);
+
+            // Optionally, add back to the scene at the drop location
+            if (this.scene) {
+                this.scene.add(this.currentlyHeldObject);
+                this.currentlyHeldObject.position.copy(this.joints[5].getWorldPosition(new THREE.Vector3()));
+            }
+        }
+    }
+
     async waitWhilePaused() {
         let state = await this.api.getState();
         while (state.isEmergencyMode || state.isPaused || state.isSafetyMode) {

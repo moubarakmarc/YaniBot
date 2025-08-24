@@ -1,11 +1,13 @@
 // ui.js - Complete UI controls and events management
 class UIManager {
-    constructor(robotManager, automationManager, emergencyManager = null) {
+    constructor(sceneManager, robotManager, automationManager, APIManager) {
+        this.scene = sceneManager;
         this.robot = robotManager;
         this.automation = automationManager;
-        this.emergencyManager = emergencyManager;
+        this.api = APIManager;
+        this.emergencyManager = null; // Will be set by EmergencyManager
         this.elements = {};
-        this.api = null; 
+
     }
     
     init() {
@@ -81,7 +83,7 @@ class UIManager {
         this.elements.emergencyStopBtn?.addEventListener('click', () => this.emergencyManager?.activateEmergencyMode());
         
         // Window events
-        window.addEventListener('beforeunload', () => this.handlePageUnload());
+        window.addEventListener('beforeunload', () => this.handleResetScene());
         
         const resumeEbtn = document.getElementById('resumeEmergency');
         if (resumeEbtn) {
@@ -147,7 +149,10 @@ class UIManager {
     async handleStartAutomation() {
         try {
             this.showStatus('Starting automation...', 'info');
-            await this.automation.start();
+            if (this.automation.binManager.isEmpty()) throw new Error('No objects to move - reset the scene first');
+            await this.api.setMovingState(true);
+            this.automation.cycleCount = 0;
+            this.automation.automationLoopPromise = this.automation.automationLoop();
             this.updateAutomationButtons();
             this.toggleOverrideControls();
             this.showStatus('Automation Starting...', 'success');
@@ -161,7 +166,15 @@ class UIManager {
     async handleStopAutomation() {
         try {
             this.showStatus('Stopping automation...', 'info');
-            await this.automation.stop();
+            await this.api.setStopState(true);
+            if (this.automation.automationLoopPromise) {
+                await this.automation.automationLoopPromise;
+                this.automation.automationLoopPromise = null;
+            }        
+            if (this.automation.automationInterval) clearTimeout(this.automation.automationInterval);
+            this.api.setMovingState(false);
+            this.api.setStopState(false);
+            console.log('✅ Automation stopped');
             this.updateAutomationButtons();
             this.toggleOverrideControls();
             this.showStatus('Automation stopped', 'warning');
@@ -260,14 +273,6 @@ class UIManager {
             this.showStatus(`Failed to set joints: ${error.message}`, 'error');
         }
     }
-
-    async handlePageUnload() {
-        // Cleanup when page is closing
-        let state = await this.api.getState();
-        if (state.isMoving) {
-            this.automation.stop();
-        }
-    }
     
     updateBinCounts() {
         if (this.automation.binManager) {
@@ -343,6 +348,127 @@ class UIManager {
         } else {
             this.elements.manualJointControl.classList.remove('disabled');
         }
+    }
+
+    async showEmergencyUI() {
+        let state = await this.api.getState();
+        let top;
+        if (state.isSafetyMode) {
+            top = 90; // Adjust top position for emergency warning
+        } else {
+            top = 20; // Use configured top position
+        }
+        // Create or show emergency warning UI
+        let emergencyDiv = document.getElementById('emergency-warning');
+        if (!emergencyDiv) {
+            emergencyDiv = document.createElement('div');
+            emergencyDiv.id = 'emergency-warning';
+            emergencyDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: ${top}px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #ff4444;
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 18px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    animation: pulse 1s infinite;
+                ">
+                    🚨 EMERGENCY STOP 🚨
+                </div>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.7; }
+                        100% { opacity: 1; }
+                    }
+                </style>
+            `;
+            document.body.appendChild(emergencyDiv);
+        }
+        emergencyDiv.style.display = 'block';
+    }
+    
+    hideEmergencyUI() {
+        const emergencyDiv = document.getElementById('emergency-warning');
+        if (emergencyDiv) {
+            emergencyDiv.remove(); // This will remove the element from the DOM
+        }
+    }
+
+    async showSafetyUI() {
+        let state = await this.api.getState();
+        let top;
+        // Adjust top position based on emergency state
+        if (state.isEmergencyMode) {
+            top = 90; // Adjust top position for emergency warning
+        } else {
+            top = 20; // Use configured top position
+        }
+        // Create or show safety warning UI
+        let safetyDiv = document.getElementById('safety-warning');
+        if (!safetyDiv) {
+            safetyDiv = document.createElement('div');
+            safetyDiv.id = 'safety-warning';
+            safetyDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: ${top}px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #ff4444;
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 18px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    animation: pulse 1s infinite;
+                ">
+                    🚨 SAFETY WARNING 🚨
+                </div>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.7; }
+                        100% { opacity: 1; }
+                    }
+                </style>
+            `;
+            document.body.appendChild(safetyDiv);
+        }
+        safetyDiv.style.display = 'block';
+    }
+
+    hideSafetyUI() {
+        const safetyDiv = document.getElementById('safety-warning');
+        if (safetyDiv) {
+            safetyDiv.remove(); // This will remove the element from the DOM
+        }
+    }
+
+    async toggleEmergencyResumeButtons(mode = null) {
+        const emergencyBtn = document.getElementById('emergencyStop');
+        const resumeEbtn = document.getElementById('resumeEmergency');
+        try{
+            if (mode) {
+                emergencyBtn.style.display = 'none';
+                resumeEbtn.style.display = '';
+            } else if (mode === false) {
+                emergencyBtn.style.display = '';
+                resumeEbtn.style.display = 'none';
+            } else {
+                throw new Error("Invalid mode for toggleEmergencyResumeButtons");
+            }
+        } catch (error) {
+            console.error("Error toggling emergency buttons:", error);
+        }  
     }
 
     showStatus(message, type = 'info') {

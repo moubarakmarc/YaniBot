@@ -27,13 +27,13 @@ robot = RobotArm(isEmergencyMode=False, isPaused=False, isMoving=False)
 
 def interpolate_path(startAngles, targetAngles, steps=20):
     """
-    Interpolates between the current joint angles and the target joint angles over a specified number of steps.
+    Interpolates between startAngles and targetAngles in a given number of steps.
     Args:
-        startAngles (list or array-like): The starting joint angles to interpolate from.
-        targetAngles (list or array-like): The target joint angles to interpolate towards.
-        steps (int, optional): The number of interpolation steps. Defaults to 20.
-    Yields:
-        list: The interpolated joint angles at each step.
+        startAngles (list of float): Starting joint angles.
+        targetAngles (list of float): Target joint angles.
+        steps (int): Number of interpolation steps.
+    Returns:
+        list of list of float: Interpolated joint angles at each step.
     """
     current = np.array(startAngles)
     target = np.array(targetAngles)
@@ -311,9 +311,6 @@ def set_emergency_state(request: EmergencyStateRequest):
     
     Returns:
         dict: A dictionary containing the success status and the current emergency state.
-    
-    Raises:
-        HTTPException: If the request is invalid or if an error occurs.
     """
     robot.isEmergencyMode = request.is_emergency
     return {"success": True, "isEmergencyMode": robot.isEmergencyMode}
@@ -329,9 +326,6 @@ def set_safety_mode(request: EmergencyStateRequest):
     
     Returns:
         dict: A dictionary containing the success status and the current safety mode state.
-    
-    Raises:
-        HTTPException: If the request is invalid or if an error occurs.
     """
     robot.isSafetyMode = request.is_emergency
     return {"success": True, "isSafetyMode": robot.isSafetyMode}
