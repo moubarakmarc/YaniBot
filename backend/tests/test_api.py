@@ -122,14 +122,14 @@ class TestAPI:
         data = response.json()
         assert response.status_code == 200
         assert data["success"] is True
-        assert data["is_moving"] is True
+        assert data["isMoving"] is True
 
     def test_set_unmoving_state(self):
         response = client.post("/moving", json={"is_moving": False})
         data = response.json()
         assert response.status_code == 200
         assert data["success"] is True
-        assert data["is_moving"] is False
+        assert data["isMoving"] is False
 
     def test_set_pause(self):
         response = client.post("/pause", json={"is_paused": True})

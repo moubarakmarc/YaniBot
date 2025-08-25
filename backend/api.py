@@ -227,7 +227,7 @@ def set_moving_state(request: MovingStateRequest):
         HTTPException: If the request is invalid or if an error occurs.
     """
     robot.isMoving = request.is_moving
-    return {"success": True, "is_moving": robot.isMoving}
+    return {"success": True, "isMoving": robot.isMoving}
 
 @app.post("/interpolate")
 def interpolate_path_to_move(request: InterpolateRequest, steps: int = 20):
@@ -271,14 +271,14 @@ def set_stop_state(request: StopRequest):
     This endpoint is used to stop the robot's current movement.
 
     Returns:
-        dict: A dictionary containing the success status and a message.
+        dict: A dictionary containing the success status.
     
     Raises:
         HTTPException: If the stop operation fails.
     """
     try:
         robot.isStopped = request.is_stopped
-        return {"success": True, "message": "Robot movement stopped", "isStopped": robot.isStopped}
+        return {"success": True, "isStopped": robot.isStopped}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -289,14 +289,14 @@ def set_pause_state(request: PauseRequest):
     This endpoint is used to pause the robot's current movement.
     
     Returns:
-        dict: A dictionary containing the success status and a message.
+        dict: A dictionary containing the success status.
     
     Raises:
         HTTPException: If the pause operation fails.
     """
     try:
         robot.isPaused = request.is_paused
-        return {"success": True, "message": "Robot movement paused", "isPaused": robot.isPaused}
+        return {"success": True, "isPaused": robot.isPaused}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
