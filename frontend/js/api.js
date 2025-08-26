@@ -5,7 +5,7 @@ class APIManager {
     }
 
     async init() {
-        // Try to fetch backend state or health endpoint
+        // Try to fetch backend state endpoint
         try {
             const response = await fetch(`${this.baseURL}${window.ENV.API_ENDPOINTS.ROOT}`);
             const data = await response.json();
