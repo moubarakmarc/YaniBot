@@ -102,7 +102,7 @@ class RobotManager {
 
             console.log('✅ Robot movement finished');
             await this.api.setMovingState(false);
-            await this.ui.updateAutomationStatus();            
+            await this.ui.updateAutomationStatus();
             
         } catch (error) {
             console.error('❌ Robot movement failed:', error);

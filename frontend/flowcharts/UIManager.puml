@@ -1,247 +1,116 @@
 @startuml
+title UIManager Class - Main Interactions
 
-!define RECTANGLE rectangle
-skinparam rectangle {
-    BackgroundColor #F9F9F9
-    BorderColor #333
-}
-RECTANGLE "UIManager Core" {
-    UIManager --> handleResetScene
-    UIManager --> handleStartAutomation
-    UIManager --> handleStopAutomation
-    UIManager --> handlePauseAutomation
-    UIManager --> handleResumeAutomation
-    UIManager --> handleResetJoints
-    UIManager --> handleSetJoints
-    UIManager --> handleEmergencyStop12345
-    UIManager --> handleClearEmergency12345
-    UIManager --> setAutomationStrategy
-    UIManager --> handleLogControls
-    UIManager --> updateBinCounts
-    UIManager --> updateCycleCount
-    UIManager --> updateAutomationStatus
-    UIManager --> updateJointDisplays
-    UIManager --> updateAutomationButtons
-    UIManager --> updatePauseResumeButtons
-    UIManager --> toggleOverrideControls
-    UIManager --> showEmergencyUI
-    UIManager --> hideEmergencyUI
-    UIManager --> showSafetyUI
-    UIManager --> hideSafetyUI
-    UIManager --> toggleEmergencyResumeButtons
-    UIManager --> showStatus
-    UIManager --> showToast
-}
+actor User
+participant UIManager as UI
+participant RobotManager as Robot
+participant AutomationManager as Automation
+participant APIManager as API
+participant EmergencyManager as Emergency
+participant DOM as DOM
 
-RECTANGLE "Reset Scene" {
-    handleResetScene --> "showStatus : Restarting scene..."
-    "showStatus : Restarting scene..." --> "POST /reset -> resetData"
-    "POST /reset : resetData" --> "POST /angles : current_angles = resetData.targetAngles"
-    "POST /angles : current_angles = resetData.targetAngles" --> "POST /moving : is_moving = false"
-    "POST /moving : is_moving = false" --> "POST /pause : is_paused = false"
-    "POST /pause : is_paused = false" --> "POST /stop : is_stopped = false"
-    "POST /stop : is_stopped = false" --> "POST /emergency : is_emergency = false"
-    "POST /emergency : is_emergency = false" --> "POST /safety : is_emergency = false"
-    "POST /safety : is_emergency = false" --> "updateJointDisplays : resetData.currentAngles"
-    "updateJointDisplays : resetData.currentAngles" --> updateAutomationStatus
-    updateAutomationStatus --> updateAutomationButtons
-    updateAutomationButtons --> toggleOverrideControls
-    toggleOverrideControls --> RobotManager.SceneManager.reset
-}
+== Initialization ==
+User -> UI: new UIManager(scene, robot, automation, api)
+User -> UI: init()
+UI -> UI: cacheElements()
+UI -> UI: bindEvents()
+UI -> UI: log "UI Manager initialized"
 
-' ---- Start Automation ----
-RECTANGLE "Start Automation"{
-    handleStartAutomation --> "showStatus : Starting automation..."
-    "showStatus : Starting automation..." --> AutomationManager.BinManager.isEmpty
-    AutomationManager.BinManager.isEmpty --> "isEmpty : false"
-    AutomationManager.BinManager.isEmpty --> "isEmpty : true"
-    "isEmpty : false" --> "POST /moving : is_moving = true"
-    "POST /moving : is_moving = true" --> "AutomationManager.cycleCount = 0"
-    "AutomationManager.cycleCount = 0" --> AutomationManager.automationLoop
-    AutomationManager.automationLoop --> updateAutomationButtons
-    updateAutomationButtons --> toggleOverrideControls
-    toggleOverrideControls --> "showStatus : Automation Starting..."
-    "isEmpty : true" --> "throw Error : No objects to move - reset the scene first"
-}
+== Cache Elements ==
+UI -> DOM: getElementById(...) for all controls and displays
+UI -> UI: store references in elements
 
-' ---- Stop Automation ----
-RECTANGLE "Stop Automation"{
-    handleStopAutomation --> "showStatus : Stopping automation..."
-    "showStatus : Stopping automation..." --> "POST /stop : is_stopped = true"
-    "POST /stop : is_stopped = true" --> "Wait for AutomationManager.automationLoop cycle to finish"
-    "Wait for AutomationManager.automationLoop cycle to finish" --> "POST /moving : is_moving = false"
-    "POST /moving : is_moving = false" --> "POST /stop : is_stopped = false"
-    "POST /stop : is_stopped = false" --> "log: ✅ Automation stopped"
-    "log: ✅ Automation stopped" --> updateAutomationButtons
-    updateAutomationButtons --> toggleOverrideControls
-    toggleOverrideControls --> "showStatus : Automation Stopped"
-}
+== Bind Events ==
+UI -> DOM: addEventListener('click', ...) for all buttons
+UI -> DOM: addEventListener('beforeunload', ...)
+UI -> DOM: addEventListener('click', ...) for log controls
+UI -> DOM: addEventListener('click', ...) for joint controls
+UI -> UI: log "UI Events bound"
 
-' ---- Pause Automation ----
-RECTANGLE "Pause Automation"{
-    handlePauseAutomation --> "POST /pause : is_paused = true"
-    "POST /pause : is_paused = true" --> "POST /moving : is_moving = false"
-    "POST /moving : is_moving = false" --> updateAutomationStatus
-    updateAutomationStatus --> updatePauseResumeButtons
-    updatePauseResumeButtons --> toggleOverrideControls
-    toggleOverrideControls --> "showStatus : Automation Paused"
-}
+== Automation Controls ==
+User -> UI: Click start/stop/pause/resume/reset buttons
+alt Start Automation
+    UI -> UI: handleStartAutomation()
+    UI -> API: setMovingState(true)
+    UI -> Automation: automationLoop()
+    UI -> UI: updateAutomationButtons()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: showStatus("Automation Starting...", "success")
+else Stop Automation
+    UI -> UI: handleStopAutomation()
+    UI -> API: setStopState(true)
+    UI -> Automation: automationLoopPromise (await)
+    UI -> API: setMovingState(false)
+    UI -> API: setStopState(false)
+    UI -> UI: updateAutomationButtons()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: showStatus("Automation stopped", "warning")
+else Pause Automation
+    UI -> UI: handlePauseAutomation()
+    UI -> API: setPauseState(true)
+    UI -> API: setMovingState(false)
+    UI -> UI: updateAutomationStatus()
+    UI -> UI: updatePauseResumeButtons()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: showStatus("Automation paused", "success")
+else Resume Automation
+    UI -> UI: handleResumeAutomation()
+    UI -> API: setPauseState(false)
+    UI -> API: setMovingState(true)
+    UI -> UI: updateAutomationStatus()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: updateAutomationButtons()
+    UI -> UI: updatePauseResumeButtons()
+    UI -> UI: showStatus("Automation resumed", "success")
+end
 
-' ---- Resume Automation ----
-RECTANGLE "Resume Automation"{
-    handleResumeAutomation --> "POST /pause : is_paused = false"
-    "POST /pause : is_paused = false" --> "POST /moving : is_moving = true"
-    "POST /moving : is_moving = true" --> updateAutomationStatus
-    updateAutomationStatus --> toggleOverrideControls
-    toggleOverrideControls --> updateAutomationButtons
-    toggleOverrideControls --> updatePauseResumeButtons
-    updatePauseResumeButtons --> "showStatus : Automation Resumed"
-}
+== Joint Controls ==
+User -> UI: Click set/reset joints
+alt Reset Joints
+    UI -> UI: handleResetJoints()
+    UI -> API: setMovingState(true)
+    UI -> API: reset()
+    UI -> Robot: moveToSaferPosition() (if needed)
+    UI -> Robot: moveTo()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: showStatus("Robot reset to home position", "success")
+else Set Joints
+    UI -> UI: handleSetJoints()
+    UI -> API: getState()
+    alt Emergency or Safety Mode
+        UI -> UI: showStatus("Robot is in emergency/safety mode!", "error")
+    else
+        UI -> API: setMovingState(true)
+        UI -> Robot: moveTo()
+        UI -> UI: showStatus("Joint angles set!", "success")
+        UI -> UI: toggleOverrideControls()
+    end
+end
 
-' ---- Reset Joints ----
-RECTANGLE "Reset Joints"{
-    handleResetJoints --> "showStatus : Resetting robot..."
-    "showStatus : Resetting robot..." --> "POST /moving : is_moving = true"
-    "POST /moving : is_moving = true" --> toggleOverrideControls
-    toggleOverrideControls --> "POST /reset -> resetData"
-    "POST /reset -> resetData" --> "Check if Shoulder rotation is greater than 50 degrees"
-    "Check if Shoulder rotation is greater than 50 degrees" --> "YES : RobotManager.moveToSaferPosition"
-    "YES : RobotManager.moveToSaferPosition" --> "NO : Update Shoulder rotation display"
-    "Check if Shoulder rotation is greater than 50 degrees" --> "NO : Update Shoulder rotation display"
-    "NO : Update Shoulder rotation display" --> "RobotManager.moveTo : resetData.targetAngles"
-    "RobotManager.moveTo : resetData.targetAngles" --> toggleOverrideControls
-    toggleOverrideControls --> "showStatus : Robot reset!"
-}
+== Emergency Controls ==
+User -> UI: Click emergencyStop or resumeEmergency
+UI -> Emergency: activateEmergencyMode() / deactivateEmergencyMode()
 
-' ---- Set Joints ----
-RECTANGLE "Set Joints"{
-    handleSetJoints --> "GET /state -> state"
-    "GET /state -> state" --> state.isEmergencyMode
-    state.isEmergencyMode --> "isEmergencyMode : true"
-    "isEmergencyMode : true" --> "showStatus : Emergency mode is active"
-    "GET /state -> state" --> state.isSafetyMode
-    state.isSafetyMode --> "isSafetyMode : true"
-    "isSafetyMode : true" --> "showStatus : Safety mode is active"
-    "GET /state -> state" --> "POST /moving : is_moving = true"
-    "POST /moving : is_moving = true" --> toggleOverrideControls
-    toggleOverrideControls --> "Gather all joint input values -> jointAngles"
-    "Gather all joint input values -> jointAngles" --> "showStatus : Setting joint angles..."
-    "showStatus : Setting joint angles..." --> "RobotManager.moveTo : state.currentAngles, jointAngles, manualIntervention = true"
-    "RobotManager.moveTo : state.currentAngles, jointAngles, manualIntervention = true" --> "showStatus : Joint angles set!"
-    "showStatus : Joint angles set!" --> toggleOverrideControls
-}
+== UI Updates ==
+Automation -> UI: updateBinCounts()
+Automation -> UI: updateCycleCount()
+Robot -> UI: updateJointDisplays(angles)
+UI -> API: getState()
+UI -> UI: updateAutomationStatus()
+UI -> UI: updateAutomationButtons()
+UI -> UI: updatePauseResumeButtons()
+UI -> UI: toggleOverrideControls()
 
-' ---- Update Bin Counts ----
-RECTANGLE "Update Bin Counts"{
-    updateBinCounts --> AutomationManager.BinManager.getBinCounts
-    AutomationManager.BinManager.getBinCounts --> "Update Visuals for left bin"
-    AutomationManager.BinManager.getBinCounts --> "Update Visuals for right bin"
-}
+== Emergency/Safety UI ==
+Emergency -> UI: showEmergencyUI()
+Emergency -> UI: hideEmergencyUI()
+Emergency -> UI: showSafetyUI()
+Emergency -> UI: hideSafetyUI()
+Emergency -> UI: toggleEmergencyResumeButtons(mode)
 
-' ---- Update Cycle Count ----
-RECTANGLE "Update Cycle Count"{
-    updateCycleCount --> AutomationManager.cycleCount
-    AutomationManager.cycleCount --> "Update Visuals for cycle count"
-}
-
-' ---- Update Automation Status ----
-RECTANGLE "Update Automation Status"{
-    updateAutomationStatus --> "GET /state -> state"
-    "GET /state -> state" --> state.isMoving
-    state.isMoving --> "isMoving : true"
-    "isMoving : true" --> "Update Automation Status to Moving"
-    state.isMoving --> "isMoving : false"
-    "isMoving : false" --> "Update Automation Status to Idle"
-}
-
-' ---- Update Joint Displays ----
-RECTANGLE "Update Joint Displays"{
-    updateJointDisplays --> "Receive the angles as a variable when calling the function"
-    "Receive the angles as a variable when calling the function" --> "Update Visuals for angles"
-}
-
-' ---- Update Automation Buttons ----
-RECTANGLE "Update Automation Buttons"{
-    updateAutomationButtons --> "GET /state -> state"
-    "GET /state -> state" --> state.isMoving
-    state.isMoving --> "isMoving : true"
-    "isMoving : true" --> "Disable Automation Start button"
-    "Disable Automation Start button" --> "Enable Automation Stop button"
-    "Enable Automation Stop button" --> updatePauseResumeButtons
-    state.isMoving --> "isMoving : false"
-    "isMoving : false" --> "Enable Automation Start button"
-    "Enable Automation Start button" --> "Disable Automation Stop button"
-    "Disable Automation Stop button" --> updatePauseResumeButtons
-}
-
-' ---- Update Pause Resume Buttons ----
-RECTANGLE "Update Pause Resume Buttons"{
-    updatePauseResumeButtons --> "GET /state -> state"
-    "GET /state -> state" --> "state.isPaused and state.isMoving"
-    "state.isPaused and state.isMoving" --> "isPaused : true"
-    "isPaused : true" --> "Update Pause Resume Buttons to Resume"
-    "state.isPaused and state.isMoving" --> "isPaused : false and isMoving : true"
-    "isPaused : false and isMoving : true" --> "Update Pause Resume Buttons to Pause"
-    "state.isPaused and state.isMoving" --> "isMoving : false"
-    "isMoving : false" --> "Update Pause Resume Buttons to Pause but Disabled"
-}
-
-' ---- Toggle Override Controls ----
-RECTANGLE "Toggle Override Controls"{
-    toggleOverrideControls --> "GET /state -> state"
-    "GET /state -> state" --> state.isMoving
-    state.isMoving --> "isMoving : true"
-    "isMoving : true" --> "Update Override Controls to Disable"
-    state.isMoving --> "isMoving : false"
-    "isMoving : false" --> "Update Override Controls to Enable"
-}
-
-' ---- Show Emergency UI ----
-RECTANGLE "Show Emergency UI"{
-    showEmergencyUI --> "GET /state -> state"
-    "GET /state -> state" --> state.isEmergencyMode
-    state.isEmergencyMode --> "isEmergencyMode : true"
-    "isEmergencyMode : true" --> "Update UI to Show Emergency Div"
-}
-
-' ---- Hide Emergency UI ----
-RECTANGLE "Hide Emergency UI"{
-    hideEmergencyUI --> "Check if Emergency Div is visible"
-    "Check if Emergency Div is visible" --> "YES : remove it"
-}
-
-' ---- Show Safety UI ----
-RECTANGLE "Show Safety UI"{
-    showSafetyUI --> "GET /state -> state"
-    "GET /state -> state" --> state.isSafetyMode
-    state.isSafetyMode --> "isSafetyMode : true"
-    "isSafetyMode : true" --> "Update UI to Show Safety Div"
-}
-
-' ---- Hide Safety UI ----
-RECTANGLE "Hide Safety UI"{
-    hideSafetyUI --> "Check if Safety Div is visible"
-    "Check if Safety Div is visible" --> "YES : remove it"
-}
-
-' ---- Toggle Emergency Resume Buttons ----
-RECTANGLE "Toggle Emergency Resume Buttons"{
-    toggleEmergencyResumeButtons --> "Receive mode when called"
-    "Receive mode when called" --> Emergency
-    Emergency --> "Update Emergency and Resume buttons to show Resume"
-    "Receive mode when called" --> notEmergency
-    notEmergency --> "Update Emergency and Resume buttons to show Emergency"
-}
-
-' ---- Show Status ----
-RECTANGLE "Show Status"{
-    showStatus --> "Console log the provided message"
-    "Console log the provided message" --> showToast
-}
-
-' ---- Show Toast ----
-RECTANGLE "Show Toast"{
-    showToast --> "Display the toast notification"
-}
+== Status and Toast ==
+UI -> UI: showStatus(message, type)
+UI -> UI: showToast(message, type)
+UI -> DOM: create and display toast notification
 
 @enduml

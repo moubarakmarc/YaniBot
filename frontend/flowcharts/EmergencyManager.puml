@@ -1,0 +1,57 @@
+@startuml
+title EmergencyManager Class - Main Interactions
+
+actor User
+participant UIManager as UI
+participant EmergencyManager as Emergency
+participant APIManager as API
+participant MovableObject as Movable
+
+== Initialization ==
+User -> Emergency: init()
+alt missing UI or API
+    Emergency -> Emergency: throw Error
+else
+    Emergency -> Emergency: log "Initializing Emergency Manager"
+end
+
+== Safety Zone Check ==
+Movable -> Emergency: checkSafetyZone()
+Emergency -> Emergency: Calculate distance from (0,0,0)
+Emergency -> API: getState()
+API --> Emergency: { isSafetyMode }
+alt Safety state changed
+    alt Entering safety zone
+        Emergency -> Emergency: activateSafetyMode()
+    else Leaving safety zone
+        Emergency -> Emergency: deactivateSafetyMode()
+    end
+end
+
+== Activate Safety Mode ==
+Emergency -> Emergency: log "SAFETY MODE ACTIVATED"
+Emergency -> API: setSafetyMode(true)
+Emergency -> Movable: set color to red
+Emergency -> UI: showSafetyUI()
+
+== Deactivate Safety Mode ==
+Emergency -> Emergency: log "SAFETY MODE DEACTIVATED"
+Emergency -> Movable: set color to gold
+Emergency -> UI: hideSafetyUI()
+Emergency -> API: setSafetyMode(false)
+
+== Activate Emergency Mode ==
+User -> Emergency: activateEmergencyMode()
+Emergency -> Emergency: log "EMERGENCY MODE TRIGGERED"
+Emergency -> API: setEmergencyState(true)
+Emergency -> UI: showEmergencyUI()
+Emergency -> UI: toggleEmergencyResumeButtons(true)
+
+== Deactivate Emergency Mode ==
+User -> Emergency: deactivateEmergencyMode()
+Emergency -> Emergency: log "EMERGENCY MODE DEACTIVATED"
+Emergency -> UI: hideEmergencyUI()
+Emergency -> API: setEmergencyState(false)
+Emergency -> UI: toggleEmergencyResumeButtons(false)
+
+@enduml

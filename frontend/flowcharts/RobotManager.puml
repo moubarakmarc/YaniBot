@@ -1,0 +1,95 @@
+@startuml
+title RobotManager Class - Main Interactions
+
+actor User
+participant UIManager as UI
+participant RobotManager as Robot
+participant APIManager as API
+participant AutomationManager as Automation
+participant BinManager as Bin
+participant SceneManager as Scene
+participant RobotBuilder as Builder
+
+== Initialization ==
+User -> UI: Triggers robot initialization
+UI -> Robot: init()
+Robot -> Scene: get scene
+Robot -> Builder: new RobotBuilder(scene)
+Robot -> Builder: builder.api = api
+Robot -> Builder: buildRobot()
+Builder --> Robot: { robotRoot, joints, robotSegments }
+Robot -> UI: updateJointDisplays(anglesDeg)
+Robot -> Robot: log "robot initialized"
+
+== Movement ==
+UI -> Robot: moveTo(startAngles, targetAngles, duration, manualIntervention)
+alt startAngles is null
+    Robot -> API: getState()
+    API --> Robot: { currentAngles }
+    Robot -> Robot: startAngles = state.currentAngles
+end
+Robot -> API: getInterpolatedPath(startAngles, targetAngles, 30)
+API --> Robot: path
+Robot -> API: setMovingState(true)
+Robot -> UI: updateAutomationStatus()
+loop for each step in path
+    alt !manualIntervention
+        Robot -> Robot: waitWhilePaused()
+        Robot -> API: getState()
+        API --> Robot: { currentAngles }
+        alt !arraysAlmostEqual(currentAngles, path[i])
+            Robot -> Robot: log "Robot moved during pause"
+            alt currentAngles[1] > 50.0
+                Robot -> Robot: moveToSaferPosition(currentAngles, duration)
+                Robot -> API: getState()
+                API --> Robot: { currentAngles }
+            end
+            Robot -> API: getInterpolatedPath(currentAngles, targetAngles, 30)
+            API --> Robot: path
+            Robot -> Robot: i = 0 (restart loop)
+        end
+    end
+    Robot -> API: check_joint_limits(path[i])
+    API --> Robot: limitCheck
+    alt limitCheck.success == false
+        Robot -> UI: showStatus("Joints are at their limits...", "error")
+        Robot -> Robot: return
+    end
+    Robot -> Robot: setJointAngles(path[i])
+    Robot -> UI: updateJointDisplays(path[i])
+    Robot -> API: setCurrentAngles(path[i])
+    Robot -> Robot: sleep(duration / path.length)
+end
+Robot -> API: setMovingState(false)
+Robot -> UI: updateAutomationStatus()
+
+== Pick and Place ==
+Automation -> Robot: pickObject(binName)
+Robot -> Robot: sleep(500)
+Robot -> Automation: binManager.pickupObject(binName)
+alt object picked
+    Robot -> Robot: attachObjectToRobot(object)
+else no object
+    Robot -> Robot: throw Error
+end
+
+Automation -> Robot: dropObject(binName)
+alt currentlyHeldObject exists
+    Robot -> Robot: sleep(500)
+    Robot -> Automation: binManager.dropObject(object, binName)
+    Robot -> Robot: detachObjectFromRobot()
+    Robot -> Robot: currentlyHeldObject = null
+else
+    Robot -> Robot: throw Error
+end
+
+== Wait While Paused ==
+Robot -> API: getState()
+loop while paused/emergency/safety
+    Robot -> API: setMovingState(false)
+    Robot -> UI: updateAutomationStatus()
+    Robot -> Robot: sleep(100)
+    Robot -> API: getState()
+end
+
+@enduml

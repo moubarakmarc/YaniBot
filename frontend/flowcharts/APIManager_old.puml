@@ -1,0 +1,89 @@
+@startuml
+
+!define RECTANGLE rectangle
+skinparam rectangle {
+    BackgroundColor #F9F9F9
+    BorderColor #333
+}
+
+RECTANGLE APIManager {
+}
+
+APIManager --> init
+APIManager --> getState
+APIManager --> reset
+APIManager --> getInterpolatedPath
+getInterpolatedPath : list startAngles
+getInterpolatedPath : list targetAngles
+APIManager --> check_joint_limits
+check_joint_limits : list joint_angles
+APIManager --> setCurrentAngles
+setCurrentAngles : list joint_angles
+APIManager --> setMovingState
+setMovingState : bool is_moving
+APIManager --> setStopState
+setStopState : bool is_stopped
+APIManager --> setPauseState
+setPauseState : bool is_paused
+APIManager --> setEmergencyState
+setEmergencyState : bool is_emergency
+APIManager --> setSafetyMode
+setSafetyMode : bool is_emergency
+
+init --> "GET /"
+"GET /" : message
+"GET /" : version
+"GET /" : docs link
+
+getState --> "GET /state"
+"GET /state" : bool isMoving
+"GET /state" : bool isEmergencyMode
+"GET /state" : bool isPaused
+"GET /state" : bool isStopped
+"GET /state" : bool isSafetyMode
+"GET /state" : list currentAngles
+"GET /state" : list homeAngles
+
+reset --> "POST /reset"
+"POST /reset" : string success
+"POST /reset" : list currentAngles
+"POST /reset" : list targetAngles
+"POST /reset" : bool isMoving
+"POST /reset" : bool isPaused
+"POST /reset" : bool isStopped
+"POST /reset" : bool isEmergencyMode
+"POST /reset" : bool isSafetyMode
+
+getInterpolatedPath --> "POST /interpolate"
+"POST /interpolate" : string success
+"POST /interpolate" : list steps
+
+check_joint_limits --> "POST /limits"
+"POST /limits" : string success
+"POST /limits" : list joint_angles
+
+setCurrentAngles --> "POST /angles"
+"POST /angles" : string success
+"POST /angles" : list currentAngles
+
+setMovingState --> "POST /moving"
+"POST /moving" : string success
+"POST /moving" : bool isMoving
+
+setStopState --> "POST /stop"
+"POST /stop" : string success
+"POST /stop" : bool isStopped
+
+setPauseState --> "POST /pause"
+"POST /pause" : string success
+"POST /pause" : bool isPaused
+
+setEmergencyState --> "POST /emergency"
+"POST /emergency" : string success
+"POST /emergency" : bool isEmergencyMode
+
+setSafetyMode --> "POST /safety"
+"POST /safety" : string success
+"POST /safety" : bool isSafetyMode
+
+@enduml
