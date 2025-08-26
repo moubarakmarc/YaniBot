@@ -112,6 +112,7 @@ It provides real-time visualization, manual and automated joint control, and mot
 | POST   | `/pause`    | Pause or unpause robot         |
 | POST   | `/stop`     | Stop robot movement            |
 | POST   | `/emergency`| Set or clear emergency mode    |
+| POST   | `/safety`   | Set or clear safety mode       |
 
 ### Example Usage
 
