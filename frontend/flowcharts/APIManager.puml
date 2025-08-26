@@ -1,5 +1,5 @@
 @startuml
-title APIManager Class - Main Interactions
+title APIManager Class - Main Interactions (with Responses)
 
 actor User
 participant APIManager as API
@@ -14,7 +14,7 @@ end
 
 User -> API: init()
 API -> Backend: fetch(ROOT)
-Backend --> API: response
+Backend --> API: { message, version, docs }
 alt response.ok
     API -> API: return true
 else
@@ -24,7 +24,7 @@ end
 == State Management ==
 User -> API: getState()
 API -> Backend: fetch(STATE)
-Backend --> API: response
+Backend --> API: { isMoving, isEmergencyMode, isPaused, isStopped, isSafetyMode, currentAngles, homeAngles }
 alt response.ok
     API -> API: return data
 else
@@ -33,7 +33,7 @@ end
 
 User -> API: reset()
 API -> Backend: fetch(RESET, POST)
-Backend --> API: response
+Backend --> API: { success, message, currentAngles, targetAngles, isMoving, isPaused, isStopped, isEmergencyMode, isSafetyMode }
 alt response.ok
     API -> API: return data
 else
@@ -42,17 +42,17 @@ end
 
 == Path and Limits ==
 User -> API: getInterpolatedPath(startAngles, targetAngles, steps)
-API -> Backend: fetch(INTERPOLATE?steps=steps, POST, payload)
-Backend --> API: response
+API -> Backend: fetch(INTERPOLATE?steps=steps, POST, payload={startAngles, targetAngles})
+Backend --> API: { success, path(steps), message }
 alt response.ok
-    API -> API: return data.steps
+    API -> API: return data.path
 else
     API -> API: throw Error("Failed to fetch interpolated path")
 end
 
 User -> API: check_joint_limits(angles)
 API -> Backend: fetch(LIMITS, POST, {joint_angles: angles})
-Backend --> API: response
+Backend --> API: { success, message?, joint_angles?, currentAngles? }
 alt response.ok
     API -> API: return data
 else
@@ -62,7 +62,7 @@ end
 == Robot State Setters ==
 User -> API: setCurrentAngles(angles)
 API -> Backend: fetch(ANGLES, POST, {joint_angles: angles})
-Backend --> API: response
+Backend --> API: { success, currentAngles }
 alt response.ok
     API -> API: return data
 else
@@ -71,7 +71,7 @@ end
 
 User -> API: setMovingState(isMoving)
 API -> Backend: fetch(MOVING, POST, {is_moving: isMoving})
-Backend --> API: response
+Backend --> API: { success, isMoving }
 alt response.ok
     API -> API: return data
 else
@@ -80,7 +80,7 @@ end
 
 User -> API: setStopState(isStopped)
 API -> Backend: fetch(STOP, POST, {is_stopped: isStopped})
-Backend --> API: response
+Backend --> API: { success, isStopped }
 alt response.ok
     API -> API: return data
 else
@@ -89,7 +89,7 @@ end
 
 User -> API: setPauseState(isPaused)
 API -> Backend: fetch(PAUSE, POST, {is_paused: isPaused})
-Backend --> API: response
+Backend --> API: { success, isPaused }
 alt response.ok
     API -> API: return data
 else
@@ -98,7 +98,7 @@ end
 
 User -> API: setEmergencyState(isEmergency)
 API -> Backend: fetch(EMERGENCY, POST, {is_emergency: isEmergency})
-Backend --> API: response
+Backend --> API: { success, isEmergencyMode }
 alt response.ok
     API -> API: return data
 else
@@ -107,7 +107,7 @@ end
 
 User -> API: setSafetyMode(isSafety)
 API -> Backend: fetch(SAFETY, POST, {is_emergency: isSafety})
-Backend --> API: response
+Backend --> API: { success, isSafetyMode }
 alt response.ok
     API -> API: return data
 else
