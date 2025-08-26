@@ -134,14 +134,17 @@ YaniBot/
 ├── frontend/                   # Frontend application
 │   ├── index.html              # Main HTML file
 │   ├── style.css               # Main stylesheet
-│   └── js/
-│       ├── main.js             # Application entry point
-│       ├── scene.js            # 3D scene and workspace logic
-│       ├── robot.js            # Robot 3D model and kinematics
-│       ├── automation.js       # Automation and task logic
-│       ├── ui.js               # User interface and event handling
-│       ├── api.js              # Backend API communication
-│       └── env.js              # Environment/backend URL config
+│   ├── js/
+│   │   ├── main.js             # Application entry point
+│   │   ├── scene.js            # 3D scene and workspace logic
+│   │   ├── robot.js            # Robot 3D model and kinematics
+│   │   ├── automation.js       # Automation and task logic
+│   │   ├── ui.js               # User interface and event handling
+│   │   ├── api.js              # Backend API communication
+│   │   └── env.js              # Environment/backend URL config
+│   └── flowcharts/             # PlantUML diagrams and PNG exports
+│       ├── scripts/            # .puml source files
+│       └── exports/            # PNG images for docs/presentations
 ├── backend/                    # Backend API
 │   ├── api.py                  # FastAPI application (all endpoints)
 │   ├── robot.py                # RobotArm class and logic
@@ -154,6 +157,21 @@ YaniBot/
 ├── build.sh                    # Build and run helper script
 └── README.md                   # Project documentation (this file)
 ```
+
+---
+
+## 🗂️ Architecture & Diagrams
+
+- **System & Component Diagrams:**  
+  The `frontend/flowcharts/` folder contains PlantUML (`.puml`) diagrams for each main manager (APIManager, RobotManager, AutomationManager, BinManager, EmergencyManager, UIManager) and a combined system overview.
+- **Exports for Presentation:**  
+  PNG images of all diagrams are available in `frontend/flowcharts/exports/` for easy inclusion in slides, documentation, or wikis.
+- **Combined System Diagram:**  
+  See `frontend/flowcharts/scripts/overview.puml` and `frontend/flowcharts/exports/overview.png` for a big-picture view of how all modules interact.
+- **How to Update or Export:**  
+  - Edit `.puml` files in `frontend/flowcharts/scripts/`.
+  - Use the PlantUML VS Code extension or CLI to export updated PNGs.
+  - For presentations, use the PNGs for clear, portable visuals.
 
 ---
 
