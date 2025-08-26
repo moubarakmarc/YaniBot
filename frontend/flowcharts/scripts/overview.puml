@@ -1,0 +1,31 @@
+@startuml
+actor User
+participant UIManager as UI
+participant RobotManager as Robot
+participant AutomationManager as Automation
+participant BinManager as Bin
+participant EmergencyManager as Emergency
+participant APIManager as API
+participant SceneManager as Scene
+participant RobotBuilder as Builder
+
+User -> UI: Interacts with UI
+UI -> Robot: Calls movement & joint methods
+UI -> Automation: Starts/stops automation
+UI -> Emergency: Triggers emergency actions
+UI -> API: Requests state, updates
+
+Automation -> Bin: Checks/updates bins
+Automation -> Robot: pickAndPlace()
+Automation -> API: Gets state
+
+Robot -> API: Gets/sets angles, state
+Robot -> Builder: Builds robot
+Robot -> Scene: Gets scene
+
+Emergency -> API: Sets emergency/safety
+Emergency -> UI: Updates emergency UI
+
+Bin -> Scene: Adds/removes objects
+
+@enduml
