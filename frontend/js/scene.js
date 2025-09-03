@@ -497,6 +497,137 @@ class WorkstationManager {
     }
 }
 
+class MovableObject {
+    constructor(sceneManager, emergencyManager) {
+        this.sceneManager = sceneManager;
+        this.scene = sceneManager.scene;
+        this.camera = sceneManager.camera;
+        this.renderer = sceneManager.renderer;
+        this.emergency = emergencyManager;
+    }
+
+    async init(){
+        this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.createMovableSquare();
+        this.setupEventListeners();
+        this.isDragging = false;
+    }
+
+    createMovableSquare() {
+        // Create movable square object
+        const squareGeometry = new THREE.BoxGeometry(0.3, 0.1, 0.3);
+        const squareMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFFD700, // Gold color
+            metalness: 0.3,
+            roughness: 0.7,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        this.square = new THREE.Mesh(squareGeometry, squareMaterial);
+        this.square.position.set(4, 0.05, 0); // Start outside emergency zone
+        this.square.castShadow = true;
+        this.square.receiveShadow = true;
+        this.square.name = "MovableSquare";
+
+        // Add hover effect material
+        this.normalMaterial = squareMaterial;
+        this.hoverMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF6B6B, // Red on hover
+            metalness: 0.3,
+            roughness: 0.7,
+            transparent: true,
+            opacity: 0.9
+        });
+        
+        this.scene.add(this.square);
+        console.log("📦 Movable square created");
+    }
+
+    setupEventListeners() {
+        // Mouse events for dragging
+        this.renderer.domElement.addEventListener('mousedown', (event) => this.onMouseDown(event));
+        this.renderer.domElement.addEventListener('mousemove', (event) => this.onMouseMove(event));
+        this.renderer.domElement.addEventListener('mouseup', (event) => this.onMouseUp(event));
+    }
+    
+    updateMousePosition(event) {
+        const rect = this.renderer.domElement.getBoundingClientRect();
+        this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+    
+    onMouseDown(event) {
+        event.preventDefault();
+        this.updateMousePosition(event);
+        
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObject(this.square);
+
+        if (intersects.length > 0) {
+            this.isDragging = true;
+            this.square.material = this.hoverMaterial;
+            if (this.sceneManager) { // Disable controls while dragging
+                this.sceneManager.manualControlsEnabled = false;
+            }
+            console.log("📦 Started dragging square");
+        }
+    }
+    
+    onMouseMove(event) {
+        event.preventDefault();
+        this.updateMousePosition(event);
+        
+        if (this.isDragging) {
+            // Cast ray to ground plane for dragging
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+            const intersection = new THREE.Vector3();
+            this.raycaster.ray.intersectPlane(this.dragPlane, intersection);
+            
+            if (intersection) {
+                this.square.position.x = intersection.x;
+                this.square.position.z = intersection.z;
+                this.square.position.y = 0.05; // Keep above ground
+
+                this.emergency.checkSafetyZone();
+            }
+        } else {
+            // Check for hover effect
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+            const intersects = this.raycaster.intersectObject(this.square);
+
+            if (intersects.length > 0) {
+                this.square.material = this.hoverMaterial;
+                this.renderer.domElement.style.cursor = 'pointer';
+            } else {
+                this.square.material = this.normalMaterial;
+                this.renderer.domElement.style.cursor = 'default';
+            }
+        }
+    }
+    
+    onMouseUp(event) {
+        event.preventDefault();
+
+        
+        if (this.isDragging) {
+            this.isDragging = false;
+            this.square.material = this.normalMaterial;
+            this.renderer.domElement.style.cursor = 'default';
+            if (this.sceneManager) { // Enable controls while dragging
+                this.sceneManager.manualControlsEnabled = true;
+                if (typeof this.sceneManager.resetManualControls === 'function') {
+                    this.sceneManager.resetManualControls();
+                }
+            }
+            console.log("📦 Stopped dragging square");
+        }
+    }
+
+}
 // Make classes globally available
 window.SceneManager = SceneManager;
 window.WorkstationManager = WorkstationManager;
+window.MovableObject = MovableObject;

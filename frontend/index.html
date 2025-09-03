@@ -91,11 +91,11 @@
         <!-- Manual Override Section -->
         <div id="manual-override">
             <h3>🎮 Manual Joint Control</h3>
-            <p class="override-warning">⚠️ Stop automation before manual control</p>
-            
+            <p class="override-warning">⚠️ Manual Controls can lead to dangers in hands of children</p>
+
             <!-- Joint Sliders -->
             <div class="joint-controls-grid">
-                <div class="joint-arrow-control">
+                <div class="joint-control">
                     <div class="joint-label-stack">
                         <label>Base:</label>
                         <span class="joint-limits">-180° to 180°</span>
@@ -105,7 +105,7 @@
                         <span id="a1-value" class="joint-value">0°</span>
                     </div>
                 </div>
-                <div class="joint-arrow-control">
+                <div class="joint-control">
                     <div class="joint-label-stack">
                         <label>Shoulder:</label>
                         <span class="joint-limits">-65° to 80°</span>
@@ -115,7 +115,7 @@
                         <span id="a2-value" class="joint-value">0°</span>
                     </div>
                 </div>
-                <div class="joint-arrow-control">
+                <div class="joint-control">
                     <div class="joint-label-stack">
                         <label>Elbow:</label>
                         <span class="joint-limits">-180° to 60°</span>
@@ -125,7 +125,7 @@
                         <span id="a3-value" class="joint-value">0°</span>
                     </div>
                 </div>
-                <div class="joint-arrow-control">
+                <div class="joint-control">
                     <div class="joint-label-stack">
                         <label>Wrist Roll:</label>
                         <span class="joint-limits">-300° to 300°</span>
@@ -135,7 +135,7 @@
                         <span id="a4-value" class="joint-value">0°</span>
                     </div>
                 </div>
-                <div class="joint-arrow-control">
+                <div class="joint-control">
                     <div class="joint-label-stack">
                         <label>Wrist Pitch:</label>
                         <span class="joint-limits">-120° to 120°</span>
@@ -145,7 +145,7 @@
                         <span id="a5-value" class="joint-value">0°</span>
                     </div>
                 </div>
-                <div class="joint-arrow-control">
+                <div class="joint-control">
                     <div class="joint-label-stack">
                         <label>Flange:</label>
                         <span class="joint-limits">-300° to 300°</span>
@@ -155,6 +155,10 @@
                         <span id="a6-value" class="joint-value">0°</span>
                     </div>
                 </div>
+            </div>
+            <!-- Send Manual Control Values -->
+            <div class="manual-buttons">
+                <button id="setJoints" class="btn-set-joints">🔧 Set Joint Angles</button> 
             </div>
             
             <!-- Manual Control Buttons -->

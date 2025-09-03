@@ -27,13 +27,13 @@ robot = RobotArm(isEmergencyMode=False, isPaused=False, isMoving=False)
 
 def interpolate_path(startAngles, targetAngles, steps=20):
     """
-    Interpolates between the current joint angles and the target joint angles over a specified number of steps.
+    Interpolates between startAngles and targetAngles in a given number of steps.
     Args:
-        startAngles (list or array-like): The starting joint angles to interpolate from.
-        targetAngles (list or array-like): The target joint angles to interpolate towards.
-        steps (int, optional): The number of interpolation steps. Defaults to 20.
-    Yields:
-        list: The interpolated joint angles at each step.
+        startAngles (list of float): Starting joint angles.
+        targetAngles (list of float): Target joint angles.
+        steps (int): Number of interpolation steps.
+    Returns:
+        list of list of float: Interpolated joint angles at each step.
     """
     current = np.array(startAngles)
     target = np.array(targetAngles)
@@ -227,7 +227,7 @@ def set_moving_state(request: MovingStateRequest):
         HTTPException: If the request is invalid or if an error occurs.
     """
     robot.isMoving = request.is_moving
-    return {"success": True, "is_moving": robot.isMoving}
+    return {"success": True, "isMoving": robot.isMoving}
 
 @app.post("/interpolate")
 def interpolate_path_to_move(request: InterpolateRequest, steps: int = 20):
@@ -271,14 +271,14 @@ def set_stop_state(request: StopRequest):
     This endpoint is used to stop the robot's current movement.
 
     Returns:
-        dict: A dictionary containing the success status and a message.
+        dict: A dictionary containing the success status.
     
     Raises:
         HTTPException: If the stop operation fails.
     """
     try:
         robot.isStopped = request.is_stopped
-        return {"success": True, "message": "Robot movement stopped", "isStopped": robot.isStopped}
+        return {"success": True, "isStopped": robot.isStopped}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -289,14 +289,14 @@ def set_pause_state(request: PauseRequest):
     This endpoint is used to pause the robot's current movement.
     
     Returns:
-        dict: A dictionary containing the success status and a message.
+        dict: A dictionary containing the success status.
     
     Raises:
         HTTPException: If the pause operation fails.
     """
     try:
         robot.isPaused = request.is_paused
-        return {"success": True, "message": "Robot movement paused", "isPaused": robot.isPaused}
+        return {"success": True, "isPaused": robot.isPaused}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -311,9 +311,6 @@ def set_emergency_state(request: EmergencyStateRequest):
     
     Returns:
         dict: A dictionary containing the success status and the current emergency state.
-    
-    Raises:
-        HTTPException: If the request is invalid or if an error occurs.
     """
     robot.isEmergencyMode = request.is_emergency
     return {"success": True, "isEmergencyMode": robot.isEmergencyMode}
@@ -329,9 +326,6 @@ def set_safety_mode(request: EmergencyStateRequest):
     
     Returns:
         dict: A dictionary containing the success status and the current safety mode state.
-    
-    Raises:
-        HTTPException: If the request is invalid or if an error occurs.
     """
     robot.isSafetyMode = request.is_emergency
     return {"success": True, "isSafetyMode": robot.isSafetyMode}

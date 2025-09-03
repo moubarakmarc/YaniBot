@@ -60,16 +60,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             app.api = new APIManager();
             await app.api.init();
 
-            app.robot = new RobotManager(app.scene, RobotBuilder);
-            app.robot.api = app.api; // Pass API to robot manager
+            app.robot = new RobotManager(app.scene, RobotBuilder, app.api);
 
-            app.automation = new AutomationManager(app.robot);
-            app.automation.api = app.api; // Pass API to automation manager
-            
+            app.automation = new AutomationManager(app.robot, app.api);
+
             // Initialize UI first
-            app.ui = new UIManager(app.robot, app.automation);
-            app.ui.api = app.api; // Pass API to UI manager
-            app.ui.scene = app.scene; // Pass scene to UI manager
+            app.ui = new UIManager(app.scene, app.robot, app.automation, app.api);
             await app.ui.init();
 
             app.robot.ui = app.ui; // Pass UI to robot
@@ -80,14 +76,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             await app.automation.init();
 
-            app.emergency = new EmergencyManager(app.scene, app.robot);
-            app.emergency.ui = app.ui; // Pass UI manager to emergency manager
+            app.emergency = new EmergencyManager(app.ui, app.api);
             app.ui.emergencyManager = app.emergency; // Update UI manager with emergency reference
-            app.automation.emergencyManager = app.emergency; // Update automation manager with emergency reference
-            app.emergency.api = app.api; // Pass API to emergency manager
 
             await app.emergency.init();
+
+            app.movableObject = new MovableObject(app.scene, app.emergency);
             
+            await app.movableObject.init();
+
+            app.emergency.movableObject = app.movableObject.square; // Pass movable object to emergency manager
+
             updateLoadingStatus("YaniBot ready!");
             
             console.log("✅ YaniBot Initialized Successfully");
@@ -157,7 +156,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // === Log Options Checkbox Sync ===
     [
         'state', 'reset', 'interpolatedPath', 'jointLimits',
-        'movingState', 'currentAngles', 'stopState', 'pauseState', 'emergencyState'
+        'movingState', 'currentAngles', 'stopState', 'pauseState',
+        'emergencyState', 'safetyMode'
     ].forEach(key => {
         const checkbox = document.getElementById('log' + key.charAt(0).toUpperCase() + key.slice(1));
         if (checkbox) {

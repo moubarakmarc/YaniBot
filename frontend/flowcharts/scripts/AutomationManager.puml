@@ -1,0 +1,75 @@
+@startuml
+title AutomationManager Class - Main Interactions
+
+actor User
+participant AutomationManager as Automation
+participant RobotManager as Robot
+participant BinManager as Bin
+participant APIManager as API
+participant UIManager as UI
+
+== Initialization ==
+User -> Automation: new AutomationManager(robot, api)
+Automation -> Bin: new BinManager(robot.scene)
+User -> Automation: init()
+Automation -> Bin: init()
+Bin --> Automation: (bins initialized)
+Automation -> Automation: log "Automation Manager initialized"
+
+== Automation Loop ==
+User -> Automation: automationLoop()
+Automation -> API: getState()
+API --> Automation: { isStopped }
+loop while not state.isStopped
+    Automation -> Automation: performCycle()
+    alt shouldContinue == false
+        Automation -> Automation: break loop
+    else
+        Automation -> Robot: sleep(cycleDelay)
+        Automation -> API: getState()
+        API --> Automation: { isStopped }
+    end
+end
+
+== Perform Cycle ==
+Automation -> Bin: getTransferPair(strategy)
+Bin --> Automation: { sourceBin, targetBin }
+Automation -> Bin: isEmpty(sourceBin)
+alt sourceBin is null or empty
+    Automation -> UI: showStatus("Automation stopped: No objects left to move", "warning")
+    Automation -> UI: handleStopAutomation()
+    Automation -> Automation: return false
+else
+    Automation -> Automation: pickAndPlace(sourceBin, targetBin)
+    alt UI and updateCycleCount exist
+        Automation -> UI: updateCycleCount()
+    end
+    Automation -> Automation: log "Cycle completed"
+    Automation -> Automation: return true
+end
+
+== Pick and Place ==
+Automation -> Automation: get positions for sourceBin and targetBin
+Automation -> Robot: moveTo(null, intermediate1, 700)
+Automation -> Robot: moveTo(null, approachPos, 700)
+Automation -> Robot: moveTo(null, pickPos, 700)
+Automation -> Robot: pickObject(sourceBin)
+alt UI and updateBinCounts exist
+    Automation -> UI: updateBinCounts()
+end
+Automation -> Robot: moveTo(null, liftPos, 700)
+Automation -> Robot: moveTo(null, intermediate1, 700)
+Automation -> Robot: moveTo(null, dropApproachPos, 700)
+Automation -> Robot: moveTo(null, dropPos, 600)
+Automation -> Robot: dropObject(targetBin)
+alt UI and updateBinCounts exist
+    Automation -> UI: updateBinCounts()
+end
+Automation -> Robot: moveTo(null, dropLiftPos, 700)
+Automation -> Robot: moveTo(null, intermediate1, 700)
+alt error occurs
+    Automation -> Automation: log "Pick and place failed"
+    Automation -> Automation: throw error
+end
+
+@enduml

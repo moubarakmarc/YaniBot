@@ -1,12 +1,13 @@
 // ui.js - Complete UI controls and events management
 class UIManager {
-    constructor(robotManager, automationManager, emergencyManager = null) {
+    constructor(sceneManager, robotManager, automationManager, APIManager) {
+        this.scene = sceneManager;
         this.robot = robotManager;
         this.automation = automationManager;
-        this.emergencyManager = emergencyManager;
+        this.api = APIManager;
+        this.emergencyManager = null; // Will be set by EmergencyManager
         this.elements = {};
-        this.inputDebounceTimers = {};
-        this.api = null; 
+
     }
     
     init() {
@@ -36,6 +37,7 @@ class UIManager {
             manualJointControl: document.getElementById('manual-override'),
             jointInputs: {},
             jointValues: {},
+            setJointsBtn: document.getElementById('setJoints'),
             resetJointsBtn: document.getElementById('resetJoints'),
 
             // Emergency controls
@@ -81,7 +83,7 @@ class UIManager {
         this.elements.emergencyStopBtn?.addEventListener('click', () => this.emergencyManager?.activateEmergencyMode());
         
         // Window events
-        window.addEventListener('beforeunload', () => this.handlePageUnload());
+        window.addEventListener('beforeunload', () => this.handleResetScene());
         
         const resumeEbtn = document.getElementById('resumeEmergency');
         if (resumeEbtn) {
@@ -107,21 +109,7 @@ class UIManager {
         });
 
         // Joint controls
-        Object.entries(this.elements.jointInputs).forEach(([jointKey, inputEl], idx) => {
-            inputEl.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    let value = parseFloat(inputEl.value);
-                    const min = parseFloat(inputEl.min);
-                    const max = parseFloat(inputEl.max);
-                    value = Math.max(min, Math.min(max, value));
-                    inputEl.value = value; // Clamp value in input
-                    // // Update the value display immediately
-                    const valueDisplay = this.elements.jointValues[jointKey];
-                    // Move the robot and send to backend
-                    this.handleJointInputChange(idx, value, valueDisplay);
-                }
-            });
-        });
+        this.elements.setJointsBtn?.addEventListener('click', () => this.handleSetJoints());
 
 
         console.log("🔗 UI Events bound");
@@ -161,7 +149,10 @@ class UIManager {
     async handleStartAutomation() {
         try {
             this.showStatus('Starting automation...', 'info');
-            await this.automation.start();
+            if (this.automation.binManager.isEmpty()) throw new Error('No objects to move - reset the scene first');
+            await this.api.setMovingState(true);
+            this.automation.cycleCount = 0;
+            this.automation.automationLoopPromise = this.automation.automationLoop();
             this.updateAutomationButtons();
             this.toggleOverrideControls();
             this.showStatus('Automation Starting...', 'success');
@@ -175,7 +166,15 @@ class UIManager {
     async handleStopAutomation() {
         try {
             this.showStatus('Stopping automation...', 'info');
-            await this.automation.stop();
+            await this.api.setStopState(true);
+            if (this.automation.automationLoopPromise) {
+                await this.automation.automationLoopPromise;
+                this.automation.automationLoopPromise = null;
+            }        
+            if (this.automation.automationInterval) clearTimeout(this.automation.automationInterval);
+            this.api.setMovingState(false);
+            this.api.setStopState(false);
+            console.log('✅ Automation stopped');
             this.updateAutomationButtons();
             this.toggleOverrideControls();
             this.showStatus('Automation stopped', 'warning');
@@ -218,9 +217,18 @@ class UIManager {
     async handleResetJoints() {
         try {
             this.showStatus('Resetting robot...', 'info');
+            await this.api.setMovingState(true);
+            await this.toggleOverrideControls();
             const manualIntervention = true; // No pause during reset
+            let state = null;
             let resetData = await this.api.reset();
+            if (resetData.currentAngles[1] > 50.0){
+                await this.robot.moveToSaferPosition(resetData.currentAngles);
+                state = await this.api.getState();
+                resetData.currentAngles = state.currentAngles;
+            }
             await this.robot.moveTo(resetData.currentAngles, resetData.targetAngles, 1000, manualIntervention);
+            await this.toggleOverrideControls();
             this.showStatus('Robot reset to home position', 'success');
         } catch (error) {
             console.error('Failed to reset robot:', error);
@@ -228,39 +236,41 @@ class UIManager {
         }
     }
 
-    async handleJointInputChange(jointIndex, angle, valueDisplay) {
+    async handleSetJoints() {
         let state = await this.api.getState();
-
         if (state.isEmergencyMode) {
             this.showStatus('Robot is in emergency stop! Clear emergency before moving joints.', 'error');
             return;
         }
-
         if (state.isSafetyMode) {
             this.showStatus('Robot is in safety mode! Clear safety before moving joints.', 'error');
             return;
         }
-        
-        // Update display immediately for responsiveness
-        valueDisplay.textContent = `${Math.round(angle)}°`;
-        
-        // Update visual robot immediately
-        this.robot.moveSingleJoint(jointIndex, angle);
-        
-        // Clear existing debounce timer
-        if (this.inputDebounceTimers[jointIndex]) {
-            clearTimeout(this.inputDebounceTimers[jointIndex]);
-        }
-        
-        // Set new debounce timer for backend update
-        this.inputDebounceTimers[jointIndex] = setTimeout(async () => {}, 3000); // 3000ms debounce
-    }
 
-    async handlePageUnload() {
-        // Cleanup when page is closing
-        let state = await this.api.getState();
-        if (state.isMoving) {
-            this.automation.stop();
+        await this.api.setMovingState(true);
+        await this.toggleOverrideControls();
+
+        // Gather all joint input values
+        const jointAngles = [];
+        for (let i = 1; i <= 6; i++) {
+            const inputEl = this.elements.jointInputs[`a${i}`];
+            let value = parseFloat(inputEl.value);
+            inputEl.value = value; // Clamp value in input
+            jointAngles.push(value);
+            // Optionally update the display
+            const valueDisplay = this.elements.jointValues[`a${i}`];
+            if (valueDisplay) valueDisplay.textContent = `${Math.round(value)}°`;
+        }
+
+        // Send all joint angles to the robot/backend
+        try {
+            this.showStatus('Setting joint angles...', 'info');
+            const manualIntervention = true;
+            await this.robot.moveTo(state.currentAngles, jointAngles, 1000, manualIntervention);
+            this.showStatus('Joint angles set!', 'success');
+            await this.toggleOverrideControls();
+        } catch (error) {
+            this.showStatus(`Failed to set joints: ${error.message}`, 'error');
         }
     }
     
@@ -338,6 +348,127 @@ class UIManager {
         } else {
             this.elements.manualJointControl.classList.remove('disabled');
         }
+    }
+
+    async showEmergencyUI() {
+        let state = await this.api.getState();
+        let top;
+        if (state.isSafetyMode) {
+            top = 90; // Adjust top position for emergency warning
+        } else {
+            top = 20; // Use configured top position
+        }
+        // Create or show emergency warning UI
+        let emergencyDiv = document.getElementById('emergency-warning');
+        if (!emergencyDiv) {
+            emergencyDiv = document.createElement('div');
+            emergencyDiv.id = 'emergency-warning';
+            emergencyDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: ${top}px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #ff4444;
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 18px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    animation: pulse 1s infinite;
+                ">
+                    🚨 EMERGENCY STOP 🚨
+                </div>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.7; }
+                        100% { opacity: 1; }
+                    }
+                </style>
+            `;
+            document.body.appendChild(emergencyDiv);
+        }
+        emergencyDiv.style.display = 'block';
+    }
+    
+    hideEmergencyUI() {
+        const emergencyDiv = document.getElementById('emergency-warning');
+        if (emergencyDiv) {
+            emergencyDiv.remove(); // This will remove the element from the DOM
+        }
+    }
+
+    async showSafetyUI() {
+        let state = await this.api.getState();
+        let top;
+        // Adjust top position based on emergency state
+        if (state.isEmergencyMode) {
+            top = 90; // Adjust top position for emergency warning
+        } else {
+            top = 20; // Use configured top position
+        }
+        // Create or show safety warning UI
+        let safetyDiv = document.getElementById('safety-warning');
+        if (!safetyDiv) {
+            safetyDiv = document.createElement('div');
+            safetyDiv.id = 'safety-warning';
+            safetyDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: ${top}px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #ff4444;
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 18px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    animation: pulse 1s infinite;
+                ">
+                    🚨 SAFETY WARNING 🚨
+                </div>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.7; }
+                        100% { opacity: 1; }
+                    }
+                </style>
+            `;
+            document.body.appendChild(safetyDiv);
+        }
+        safetyDiv.style.display = 'block';
+    }
+
+    hideSafetyUI() {
+        const safetyDiv = document.getElementById('safety-warning');
+        if (safetyDiv) {
+            safetyDiv.remove(); // This will remove the element from the DOM
+        }
+    }
+
+    async toggleEmergencyResumeButtons(mode = null) {
+        const emergencyBtn = document.getElementById('emergencyStop');
+        const resumeEbtn = document.getElementById('resumeEmergency');
+        try{
+            if (mode) {
+                emergencyBtn.style.display = 'none';
+                resumeEbtn.style.display = '';
+            } else if (mode === false) {
+                emergencyBtn.style.display = '';
+                resumeEbtn.style.display = 'none';
+            } else {
+                throw new Error("Invalid mode for toggleEmergencyResumeButtons");
+            }
+        } catch (error) {
+            console.error("Error toggling emergency buttons:", error);
+        }  
     }
 
     showStatus(message, type = 'info') {

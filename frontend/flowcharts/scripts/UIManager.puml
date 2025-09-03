@@ -1,0 +1,116 @@
+@startuml
+title UIManager Class - Main Interactions
+
+actor User
+participant UIManager as UI
+participant RobotManager as Robot
+participant AutomationManager as Automation
+participant APIManager as API
+participant EmergencyManager as Emergency
+participant DOM as DOM
+
+== Initialization ==
+User -> UI: new UIManager(scene, robot, automation, api)
+User -> UI: init()
+UI -> UI: cacheElements()
+UI -> UI: bindEvents()
+UI -> UI: log "UI Manager initialized"
+
+== Cache Elements ==
+UI -> DOM: getElementById(...) for all controls and displays
+UI -> UI: store references in elements
+
+== Bind Events ==
+UI -> DOM: addEventListener('click', ...) for all buttons
+UI -> DOM: addEventListener('beforeunload', ...)
+UI -> DOM: addEventListener('click', ...) for log controls
+UI -> DOM: addEventListener('click', ...) for joint controls
+UI -> UI: log "UI Events bound"
+
+== Automation Controls ==
+User -> UI: Click start/stop/pause/resume/reset buttons
+alt Start Automation
+    UI -> UI: handleStartAutomation()
+    UI -> API: setMovingState(true)
+    UI -> Automation: automationLoop()
+    UI -> UI: updateAutomationButtons()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: showStatus("Automation Starting...", "success")
+else Stop Automation
+    UI -> UI: handleStopAutomation()
+    UI -> API: setStopState(true)
+    UI -> Automation: automationLoopPromise (await)
+    UI -> API: setMovingState(false)
+    UI -> API: setStopState(false)
+    UI -> UI: updateAutomationButtons()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: showStatus("Automation stopped", "warning")
+else Pause Automation
+    UI -> UI: handlePauseAutomation()
+    UI -> API: setPauseState(true)
+    UI -> API: setMovingState(false)
+    UI -> UI: updateAutomationStatus()
+    UI -> UI: updatePauseResumeButtons()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: showStatus("Automation paused", "success")
+else Resume Automation
+    UI -> UI: handleResumeAutomation()
+    UI -> API: setPauseState(false)
+    UI -> API: setMovingState(true)
+    UI -> UI: updateAutomationStatus()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: updateAutomationButtons()
+    UI -> UI: updatePauseResumeButtons()
+    UI -> UI: showStatus("Automation resumed", "success")
+end
+
+== Joint Controls ==
+User -> UI: Click set/reset joints
+alt Reset Joints
+    UI -> UI: handleResetJoints()
+    UI -> API: setMovingState(true)
+    UI -> API: reset()
+    UI -> Robot: moveToSaferPosition() (if needed)
+    UI -> Robot: moveTo()
+    UI -> UI: toggleOverrideControls()
+    UI -> UI: showStatus("Robot reset to home position", "success")
+else Set Joints
+    UI -> UI: handleSetJoints()
+    UI -> API: getState()
+    alt Emergency or Safety Mode
+        UI -> UI: showStatus("Robot is in emergency/safety mode!", "error")
+    else
+        UI -> API: setMovingState(true)
+        UI -> Robot: moveTo()
+        UI -> UI: showStatus("Joint angles set!", "success")
+        UI -> UI: toggleOverrideControls()
+    end
+end
+
+== Emergency Controls ==
+User -> UI: Click emergencyStop or resumeEmergency
+UI -> Emergency: activateEmergencyMode() / deactivateEmergencyMode()
+
+== UI Updates ==
+Automation -> UI: updateBinCounts()
+Automation -> UI: updateCycleCount()
+Robot -> UI: updateJointDisplays(angles)
+UI -> API: getState()
+UI -> UI: updateAutomationStatus()
+UI -> UI: updateAutomationButtons()
+UI -> UI: updatePauseResumeButtons()
+UI -> UI: toggleOverrideControls()
+
+== Emergency/Safety UI ==
+Emergency -> UI: showEmergencyUI()
+Emergency -> UI: hideEmergencyUI()
+Emergency -> UI: showSafetyUI()
+Emergency -> UI: hideSafetyUI()
+Emergency -> UI: toggleEmergencyResumeButtons(mode)
+
+== Status and Toast ==
+UI -> UI: showStatus(message, type)
+UI -> UI: showToast(message, type)
+UI -> DOM: create and display toast notification
+
+@enduml

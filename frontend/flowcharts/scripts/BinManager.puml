@@ -1,0 +1,71 @@
+@startuml
+title BinManager Class - Main Interactions
+
+actor User
+participant BinManager as Bin
+participant SceneManager as Scene
+participant THREE as ThreeJS
+
+== Initialization ==
+User -> Bin: new BinManager(scene)
+User -> Bin: init()
+loop 5 times
+    Bin -> ThreeJS: new SphereGeometry()
+    Bin -> ThreeJS: new MeshStandardMaterial()
+    Bin -> ThreeJS: new Mesh()
+    Bin -> Bin: mesh.position.set(...)
+    Bin -> Bin: leftBin.push(mesh)
+    alt scene exists
+        Bin -> Scene: scene.add(mesh)
+    end
+end
+Bin -> Bin: rightBin = []
+
+== Bin State ==
+User -> Bin: isEmpty(bin)
+alt bin == 'left'
+    Bin -> Bin: return leftBin.length == 0
+else bin == 'right'
+    Bin -> Bin: return rightBin.length == 0
+else
+    Bin -> Bin: return leftBin.length == 0 && rightBin.length == 0
+end
+
+User -> Bin: getTransferPair(strategy)
+alt left-to-right and leftBin not empty
+    Bin -> Bin: return {left, right}
+else right-to-left and rightBin not empty
+    Bin -> Bin: return {right, left}
+else bidirectional
+    alt leftBin not empty
+        Bin -> Bin: return {left, right}
+    else rightBin not empty
+        Bin -> Bin: return {right, left}
+    end
+else
+    Bin -> Bin: return {null, null}
+end
+
+== Object Transfer ==
+User -> Bin: pickupObject(binName)
+alt binName == 'left' and leftBin not empty
+    Bin -> Bin: return leftBin.shift()
+else binName == 'right' and rightBin not empty
+    Bin -> Bin: return rightBin.shift()
+else
+    Bin -> Bin: return null
+end
+
+User -> Bin: dropObject(object, binName)
+alt object is null
+    Bin -> Bin: return
+else binName == 'left'
+    Bin -> Bin: leftBin.push(object)
+else binName == 'right'
+    Bin -> Bin: rightBin.push(object)
+end
+
+User -> Bin: getBinCounts()
+Bin -> Bin: return {left: leftBin.length, right: rightBin.length}
+
+@enduml

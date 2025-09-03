@@ -17,6 +17,21 @@ It provides a modern web interface for manual and automated robot control, visua
 
 ---
 
+## Architecture
+
+- **Component Diagrams:**  
+  The `flowcharts/` folder contains PlantUML (`.puml`) diagrams for each main manager and an overview of the system architecture.
+- **Exports for Presentation:**  
+  PNG images of all diagrams are available in `flowcharts/exports/` for easy inclusion in slides or documentation.
+- **Combined System Diagram:**  
+  See `flowcharts/scripts/overview.puml` and `flowcharts/exports/overview.png` for a big-picture view of how all modules interact.
+- **How to Update or Export:**  
+  - Edit `.puml` files in `flowcharts/scripts/`.
+  - Use the PlantUML VS Code extension or CLI to export updated PNGs.
+  - For presentations, use the PNGs for clear, portable visuals.
+
+---
+
 ## Folder Structure
 
 ```
@@ -34,6 +49,9 @@ frontend/
 │   ├── robot.js       # Robot manager (3D and logic)
 │   ├── scene.js       # 3D scene and workspace
 │   └── ui.js          # UI manager and event handling
+├── flowcharts/
+│   ├── scripts/       # PlantUML .puml source diagrams
+│   └── exports/       # PNG exports for documentation/presentation
 ```
 
 ---
@@ -97,6 +115,7 @@ frontend/
 - 3D rendering uses [three.js](https://threejs.org/).
 - Error handling and status toasts are built-in.
 - For debugging, the global `app` object is available in the browser console.
+- **Architecture diagrams** are in `flowcharts/` for easy reference and presentation.
 
 ---
 
