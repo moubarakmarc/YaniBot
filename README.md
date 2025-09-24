@@ -255,7 +255,7 @@ docker compose logs frontend
 
 ## 📄 License
 
-This project is part of an assignment for **Sereact**. Please respect intellectual property rights.
+This project is part of a private assignment. Please respect intellectual property rights.
 
 ---
 
